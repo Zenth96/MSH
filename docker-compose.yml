@@ -80,9 +80,7 @@ services:
       - msh_network
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/zenth96/msh-backend:latest
     container_name: msh-backend
     restart: unless-stopped
     ports:
@@ -113,9 +111,7 @@ services:
       - msh_network
 
   worker:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile
+    image: ghcr.io/zenth96/msh-worker:latest
     container_name: msh-worker
     restart: unless-stopped
     environment:
@@ -139,9 +135,7 @@ services:
       - msh_network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/zenth96/msh-frontend:latest
     container_name: msh-frontend
     restart: unless-stopped
     ports:
