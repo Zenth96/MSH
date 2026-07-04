@@ -23,6 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Lowercase repository name
+        run: |
+          echo "LOWER_REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -40,7 +44,7 @@ jobs:
           file: ./${{ matrix.service }}/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ lower(github.repository) }}-${{ matrix.service }}:latest
-            ${{ env.REGISTRY }}/${{ lower(github.repository) }}-${{ matrix.service }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.LOWER_REPO }}-${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ env.LOWER_REPO }}-${{ matrix.service }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
