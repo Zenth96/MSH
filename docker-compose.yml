@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    platform: linux/amd64
     container_name: msh-postgres
     restart: unless-stopped
     ports:
@@ -21,6 +22,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
+    platform: linux/amd64
     container_name: msh-rabbitmq
     restart: unless-stopped
     ports:
@@ -41,6 +43,7 @@ services:
 
   minio:
     image: minio/minio:latest
+    platform: linux/amd64
     container_name: msh-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -62,6 +65,7 @@ services:
 
   createbuckets:
     image: minio/mc:latest
+    platform: linux/amd64
     container_name: msh-createbuckets
     depends_on:
       minio:
@@ -81,6 +85,7 @@ services:
 
   backend:
     image: ghcr.io/zenth96/msh-backend:latest
+    platform: linux/amd64
     container_name: msh-backend
     restart: unless-stopped
     ports:
@@ -112,6 +117,7 @@ services:
 
   worker:
     image: ghcr.io/zenth96/msh-worker:latest
+    platform: linux/amd64
     container_name: msh-worker
     restart: unless-stopped
     environment:
@@ -136,6 +142,7 @@ services:
 
   frontend:
     image: ghcr.io/zenth96/msh-frontend:latest
+    platform: linux/amd64
     container_name: msh-frontend
     restart: unless-stopped
     ports:
