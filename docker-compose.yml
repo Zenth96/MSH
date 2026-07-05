@@ -84,6 +84,7 @@ services:
       - msh_network
 
   backend:
+    build: ./backend
     image: ghcr.io/zenth96/msh-backend:latest
     platform: linux/amd64
     container_name: msh-backend
@@ -116,6 +117,7 @@ services:
       - msh_network
 
   worker:
+    build: ./worker
     image: ghcr.io/zenth96/msh-worker:latest
     platform: linux/amd64
     container_name: msh-worker
@@ -141,6 +143,7 @@ services:
       - msh_network
 
   frontend:
+    build: ./frontend
     image: ghcr.io/zenth96/msh-frontend:latest
     platform: linux/amd64
     container_name: msh-frontend
