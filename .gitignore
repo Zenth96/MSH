@@ -58,3 +58,11 @@ typings
 
 # Prisma generated client (backend)
 backend/src/generated
+
+# TypeScript
+*.tsbuildinfo
+
+# Prisma config compiled output (project root)
+prisma.config.js
+prisma.config.d.ts
+prisma.config.js.map
