@@ -2,13 +2,15 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Post,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { AuthService } from './auth.service.js';
+import { CurrentUser } from './decorators/current-user.decorator.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { RegisterDto } from './dto/register.dto.js';
+import { LoginDto } from './dto/login.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -33,13 +35,8 @@ export class AuthController {
   }
 
   @Get('me')
-  getMe(@Headers('authorization') auth: string) {
-    if (!auth) {
-      throw new UnauthorizedException('Authorization header required');
-    }
-    const token = auth.replace('Bearer ', '');
-    return this.authService.getMe(
-      this.authService['jwtService'].verify<{ sub: string }>(token).sub,
-    );
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser('sub') userId: string) {
+    return this.authService.getMe(userId);
   }
 }
