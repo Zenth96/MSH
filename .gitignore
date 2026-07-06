@@ -46,8 +46,15 @@ Thumbs.db
 *.launch
 .settings/
 
+# opencode local config
+opencode.json
+opencode.jsonc
+
 # Temp
 .sass-cache/
 __screenshots__/
 typings
 .history/*
+
+# Prisma generated client (backend)
+backend/src/generated
