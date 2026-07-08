@@ -1,0 +1,86 @@
+import { Injectable } from '@nestjs/common';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  CopyObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+@Injectable()
+export class StorageService {
+  private readonly client: S3Client;
+  private readonly bucket: string;
+  private readonly internalBase: string;
+  private readonly publicBase: string;
+
+  constructor() {
+    const endpoint = process.env.MINIO_ENDPOINT ?? 'localhost';
+    const port = process.env.MINIO_PORT ?? '9000';
+    const accessKey = process.env.MINIO_ACCESS_KEY ?? 'msh';
+    const secretKey = process.env.MINIO_SECRET_KEY ?? 'msh_secret';
+    const useSsl = process.env.MINIO_USE_SSL === 'true';
+    this.bucket = process.env.MINIO_BUCKET ?? 'msh-models';
+
+    const publicEndpoint = process.env.MINIO_PUBLIC_ENDPOINT ?? endpoint;
+    const publicPort = process.env.MINIO_PUBLIC_PORT ?? port;
+    const scheme = useSsl ? 'https' : 'http';
+
+    this.internalBase = `${scheme}://${endpoint}:${port}/${this.bucket}/`;
+    this.publicBase = `${scheme}://${publicEndpoint}:${publicPort}/${this.bucket}/`;
+
+    this.client = new S3Client({
+      region: 'us-east-1',
+      endpoint: `${scheme}://${endpoint}:${port}`,
+      credentials: {
+        accessKeyId: accessKey,
+        secretAccessKey: secretKey,
+      },
+      forcePathStyle: true,
+    });
+  }
+
+  async upload(file: Buffer, key: string, contentType?: string): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: file,
+      ...(contentType && { ContentType: contentType }),
+    });
+
+    await this.client.send(command);
+
+    return key;
+  }
+
+  async download(key: string, expiresIn = 3600): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+
+    const url = await getSignedUrl(this.client, command, { expiresIn });
+
+    return url.replace(this.internalBase, this.publicBase);
+  }
+
+  async delete(key: string): Promise<void> {
+    const command = new DeleteObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+
+    await this.client.send(command);
+  }
+
+  async copy(sourceKey: string, destKey: string): Promise<void> {
+    const command = new CopyObjectCommand({
+      Bucket: this.bucket,
+      CopySource: `${this.bucket}/${sourceKey}`,
+      Key: destKey,
+    });
+
+    await this.client.send(command);
+  }
+}

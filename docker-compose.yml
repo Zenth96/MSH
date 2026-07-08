@@ -102,6 +102,9 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-msh_secret}
       MINIO_BUCKET: msh-models
       MINIO_USE_SSL: "false"
+      # Publikus endpoint a presigned URL-ekhez (böngésző innen éri el a MinIO-t)
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost}
+      MINIO_PUBLIC_PORT: ${MINIO_PUBLIC_PORT:-9000}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
     depends_on:
@@ -132,6 +135,8 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-msh_secret}
       MINIO_BUCKET: msh-models
       MINIO_USE_SSL: "false"
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost}
+      MINIO_PUBLIC_PORT: ${MINIO_PUBLIC_PORT:-9000}
     depends_on:
       postgres:
         condition: service_healthy
