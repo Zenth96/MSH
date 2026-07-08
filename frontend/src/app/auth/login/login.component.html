@@ -1,0 +1,53 @@
+<div class="flex min-h-dvh items-center justify-center">
+  <div hlmCard class="w-full max-w-md">
+    <div hlmCardHeader>
+      <h3 hlmCardTitle>Login</h3>
+      <p hlmCardDescription>Enter your credentials to access your account</p>
+    </div>
+    <div hlmCardContent>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        @if (error) {
+          <div class="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {{ error }}
+          </div>
+        }
+
+        <hlm-field class="mb-4" orientation="vertical">
+          <label hlmLabel>Email</label>
+          <hlm-field-content>
+            <input hlmInput id="email" type="email" formControlName="email" placeholder="email@example.com" />
+          </hlm-field-content>
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <hlm-field-error>
+              @if (form.controls.email.errors?.['required']) { Email is required }
+              @if (form.controls.email.errors?.['email']) { Please enter a valid email }
+            </hlm-field-error>
+          }
+        </hlm-field>
+
+        <hlm-field class="mb-6" orientation="vertical">
+          <label hlmLabel>Password</label>
+          <hlm-field-content>
+            <input hlmInput id="password" type="password" formControlName="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+          </hlm-field-content>
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <hlm-field-error>
+              @if (form.controls.password.errors?.['required']) { Password is required }
+              @if (form.controls.password.errors?.['minlength']) { Password must be at least 6 characters }
+            </hlm-field-error>
+          }
+        </hlm-field>
+
+        <button hlmBtn type="submit" class="w-full" [disabled]="form.invalid">
+          Login
+        </button>
+      </form>
+    </div>
+    <div hlmCardFooter class="justify-center">
+      <p class="text-muted-foreground text-sm">
+        Don't have an account?
+        <a routerLink="/auth/register" class="text-primary hover:underline">Register</a>
+      </p>
+    </div>
+  </div>
+</div>

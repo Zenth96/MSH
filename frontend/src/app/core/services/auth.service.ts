@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 
@@ -27,6 +28,9 @@ const USER_KEY = 'current_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
+
   private isLoggedInSubject = new BehaviorSubject<boolean>(this.hasToken());
   private currentUserSubject = new BehaviorSubject<User | null>(this.loadUser());
 
@@ -51,6 +55,7 @@ export class AuthService {
     const refreshToken = this.getRefreshToken();
     return this.api.post<RefreshResponse>('/auth/refresh', { refreshToken }).pipe(
       tap(res => {
+        if (!this.isBrowser) return;
         localStorage.setItem(TOKEN_KEY, res.accessToken);
         localStorage.setItem(REFRESH_KEY, res.refreshToken);
       }),
@@ -60,6 +65,7 @@ export class AuthService {
   getMe(): Observable<User> {
     return this.api.get<User>('/auth/me').pipe(
       tap(user => {
+        if (!this.isBrowser) return;
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         this.currentUserSubject.next(user);
       }),
@@ -67,6 +73,7 @@ export class AuthService {
   }
 
   logout(): void {
+    if (!this.isBrowser) return;
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
@@ -75,14 +82,17 @@ export class AuthService {
   }
 
   getToken(): string | null {
+    if (!this.isBrowser) return null;
     return localStorage.getItem(TOKEN_KEY);
   }
 
   getRefreshToken(): string | null {
+    if (!this.isBrowser) return null;
     return localStorage.getItem(REFRESH_KEY);
   }
 
   private handleAuthResponse(res: AuthResponse): void {
+    if (!this.isBrowser) return;
     localStorage.setItem(TOKEN_KEY, res.accessToken);
     localStorage.setItem(REFRESH_KEY, res.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(res.user));
@@ -91,10 +101,12 @@ export class AuthService {
   }
 
   private hasToken(): boolean {
+    if (!this.isBrowser) return false;
     return !!localStorage.getItem(TOKEN_KEY);
   }
 
   private loadUser(): User | null {
+    if (!this.isBrowser) return null;
     const raw = localStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   }
