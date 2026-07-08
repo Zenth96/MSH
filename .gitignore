@@ -62,7 +62,10 @@ backend/src/generated
 # TypeScript
 *.tsbuildinfo
 
-# Prisma config compiled output (project root)
+# Prisma config compiled output
 prisma.config.js
 prisma.config.d.ts
 prisma.config.js.map
+backend/prisma.config.js
+backend/prisma.config.d.ts
+backend/prisma.config.js.map
