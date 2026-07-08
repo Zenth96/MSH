@@ -1,0 +1,65 @@
+<div class="flex min-h-dvh items-center justify-center">
+  <div hlmCard class="w-full max-w-md">
+    <div hlmCardHeader>
+      <h3 hlmCardTitle>Register</h3>
+      <p hlmCardDescription>Create a new account</p>
+    </div>
+    <div hlmCardContent>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        @if (error) {
+          <div class="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {{ error }}
+          </div>
+        }
+
+        <hlm-field class="mb-4" orientation="vertical">
+          <label hlmLabel>Name</label>
+          <hlm-field-content>
+            <input hlmInput id="name" type="text" formControlName="name" placeholder="John Doe" />
+          </hlm-field-content>
+          @if (form.controls.name.invalid && form.controls.name.touched) {
+            <hlm-field-error>
+              @if (form.controls.name.errors?.['required']) { Name is required }
+            </hlm-field-error>
+          }
+        </hlm-field>
+
+        <hlm-field class="mb-4" orientation="vertical">
+          <label hlmLabel>Email</label>
+          <hlm-field-content>
+            <input hlmInput id="email" type="email" formControlName="email" placeholder="email@example.com" />
+          </hlm-field-content>
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <hlm-field-error>
+              @if (form.controls.email.errors?.['required']) { Email is required }
+              @if (form.controls.email.errors?.['email']) { Please enter a valid email }
+            </hlm-field-error>
+          }
+        </hlm-field>
+
+        <hlm-field class="mb-6" orientation="vertical">
+          <label hlmLabel>Password</label>
+          <hlm-field-content>
+            <input hlmInput id="password" type="password" formControlName="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+          </hlm-field-content>
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <hlm-field-error>
+              @if (form.controls.password.errors?.['required']) { Password is required }
+              @if (form.controls.password.errors?.['minlength']) { Password must be at least 6 characters }
+            </hlm-field-error>
+          }
+        </hlm-field>
+
+        <button hlmBtn type="submit" class="w-full" [disabled]="form.invalid">
+          Register
+        </button>
+      </form>
+    </div>
+    <div hlmCardFooter class="justify-center">
+      <p class="text-muted-foreground text-sm">
+        Already have an account?
+        <a routerLink="/auth/login" class="text-primary hover:underline">Login</a>
+      </p>
+    </div>
+  </div>
+</div>

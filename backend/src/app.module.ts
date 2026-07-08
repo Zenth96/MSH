@@ -4,10 +4,12 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { UsersModule } from './users/users.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, StorageModule],
+  imports: [PrismaModule, AuthModule, UsersModule, StorageModule],
   controllers: [AppController],
   providers: [AppService],
 })
+
 export class AppModule {}
