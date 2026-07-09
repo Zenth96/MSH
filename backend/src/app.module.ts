@@ -5,9 +5,10 @@ import { StorageModule } from './storage/storage.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { UsersModule } from './users/users.module.js';
+import { ProjectsModule } from './projects/projects.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, StorageModule],
+  imports: [PrismaModule, AuthModule, UsersModule, StorageModule, ProjectsModule],
   controllers: [AppController],
   providers: [AppService],
 })
