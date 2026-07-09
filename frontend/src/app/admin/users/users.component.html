@@ -1,0 +1,71 @@
+<div class="p-6">
+  <h1 class="mb-6 text-2xl font-bold">User Management</h1>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <hlm-spinner />
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Table -->
+  @if (!loading() && !error() && users.length > 0) {
+    <div hlmTableContainer>
+      <table hlmTable>
+        <thead hlmTHead>
+          <tr hlmTr>
+            <th hlmTh>Name</th>
+            <th hlmTh>Email</th>
+            <th hlmTh>Role</th>
+            <th hlmTh>Created At</th>
+            <th hlmTh>Actions</th>
+          </tr>
+        </thead>
+        <tbody hlmTBody>
+          @for (user of users; track user.id) {
+            <tr hlmTr>
+              <td hlmTd class="font-medium">{{ user.name || '—' }}</td>
+              <td hlmTd>{{ user.email }}</td>
+              <td hlmTd>
+                <hlm-badge [variant]="roleVariant(user.role)">
+                  {{ user.role }}
+                </hlm-badge>
+              </td>
+              <td hlmTd>{{ user.createdAt | date:'short' }}</td>
+              <td hlmTd>
+                <div class="flex gap-2">
+                  <button hlmBtn size="sm" disabled>
+                    <ng-icon name="lucideFolderKanban" />
+                    Projects
+                  </button>
+                  <button hlmBtn size="sm" disabled>
+                    <ng-icon name="lucideBox" />
+                    Models
+                  </button>
+                  <button hlmBtn size="sm" variant="destructive" disabled>
+                    <ng-icon name="lucideTrash2" />
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Empty -->
+  @if (!loading() && !error() && users.length === 0) {
+    <div class="py-20 text-center text-sm text-muted-foreground">
+      No users found.
+    </div>
+  }
+</div>
