@@ -1,0 +1,122 @@
+<aside
+  class="bg-sidebar text-sidebar-foreground sticky top-0 flex h-dvh flex-col shrink-0 overflow-y-auto border-r border-sidebar-border transition-all duration-300"
+  [class.w-64]="!collapsed()"
+  [class.w-16]="collapsed()"
+>
+  <!-- Logo -->
+  <div class="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
+    <div class="bg-sidebar-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-sidebar-primary-foreground">
+      M
+    </div>
+    @if (!collapsed()) {
+      <span class="text-sidebar-foreground text-lg font-semibold tracking-tight">MSH</span>
+    }
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 space-y-1 p-2">
+    <a
+      routerLink="/dashboard"
+      routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+      class="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+      [hlmTooltip]="'Dashboard'"
+      [tooltipDisabled]="!collapsed()"
+      [position]="'right'"
+    >
+      <ng-icon name="lucideLayoutDashboard" class="h-5 w-5 shrink-0" />
+      @if (!collapsed()) {
+        <span>Dashboard</span>
+      }
+    </a>
+
+    <a
+      routerLink="/projects"
+      routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+      class="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+      [hlmTooltip]="'Projects'"
+      [tooltipDisabled]="!collapsed()"
+      [position]="'right'"
+    >
+      <ng-icon name="lucideFolderOpen" class="h-5 w-5 shrink-0" />
+      @if (!collapsed()) {
+        <span>Projects</span>
+      }
+    </a>
+
+    <a
+      routerLink="/models"
+      routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+      class="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+      [hlmTooltip]="'Models'"
+      [tooltipDisabled]="!collapsed()"
+      [position]="'right'"
+    >
+      <ng-icon name="lucideBox" class="h-5 w-5 shrink-0" />
+      @if (!collapsed()) {
+        <span>Models</span>
+      }
+    </a>
+
+    <div class="my-2">
+      <hlm-separator />
+    </div>
+
+    @if (isAdmin()) {
+      <a
+        routerLink="/admin/dashboard"
+        routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground"
+        class="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+        [hlmTooltip]="'Admin Dashboard'"
+        [tooltipDisabled]="!collapsed()"
+        [position]="'right'"
+      >
+        <ng-icon name="lucideShield" class="h-5 w-5 shrink-0" />
+        @if (!collapsed()) {
+          <span>Admin Dashboard</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- Bottom -->
+  <div class="border-t border-sidebar-border p-2 shrink-0">
+    <!-- User info -->
+    <div class="flex items-center gap-3 rounded-lg px-3 py-2">
+      <hlm-avatar class="h-8 w-8 shrink-0">
+        <div class="bg-sidebar-primary flex h-full w-full items-center justify-center text-xs font-medium text-sidebar-primary-foreground">
+          {{ currentUser()?.name?.charAt(0) ?? '?' }}
+        </div>
+      </hlm-avatar>
+      @if (!collapsed()) {
+        <div class="flex flex-1 flex-col overflow-hidden">
+          <span class="truncate text-sm font-medium">{{ currentUser()?.name }}</span>
+          <span class="text-muted-foreground truncate text-xs">{{ currentUser()?.role }}</span>
+        </div>
+        <button
+          hlmBtn
+          variant="ghost"
+          size="icon"
+          class="h-8 w-8 shrink-0"
+          (click)="logout()"
+        >
+          <ng-icon name="lucideLogOut" class="h-4 w-4" />
+        </button>
+      }
+    </div>
+
+    <!-- Collapse toggle -->
+    <button
+      hlmBtn
+      variant="ghost"
+      size="icon"
+      class="mt-1 flex w-full items-center justify-center"
+      (click)="toggle()"
+    >
+      @if (collapsed()) {
+        <ng-icon name="lucideChevronsRight" class="h-4 w-4" />
+      } @else {
+        <ng-icon name="lucideChevronsLeft" class="h-4 w-4" />
+      }
+    </button>
+  </div>
+</aside>

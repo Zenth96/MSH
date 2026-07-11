@@ -1,0 +1,48 @@
+<div class="p-6 space-y-8">
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Welcome back, {{ userName() }}!</h1>
+    <p class="text-muted-foreground mt-1">Here's an overview of your 3D assets</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (stat of stats(); track stat.label) {
+      <app-stats-card
+        [label]="stat.label"
+        [value]="stat.value"
+        [icon]="stat.icon"
+        [color]="stat.color"
+      />
+    }
+  </div>
+
+  <!-- Recent Models -->
+  <div>
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="text-lg font-semibold">Recent Models</h2>
+      <a routerLink="/models" class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium transition-colors">
+        See all
+        <ng-icon name="lucideArrowRight" class="h-4 w-4" />
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      @for (model of recentModels(); track model.id) {
+        <app-recent-model-card
+          [name]="model.name"
+          [projectName]="model.projectName"
+          [format]="model.format"
+          [fileSize]="model.fileSize"
+          [status]="model.status"
+        />
+      }
+    </div>
+  </div>
+
+  <!-- Upload Section -->
+  <div>
+    <h2 class="text-muted-foreground mb-4 text-lg font-semibold">Quick Actions</h2>
+    <app-upload-button />
+  </div>
+</div>
