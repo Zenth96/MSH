@@ -1,0 +1,50 @@
+<div class="p-6 space-y-6 max-w-xl">
+  <div class="flex items-center gap-4">
+    <a routerLink="/projects" hlmBtn size="sm" variant="ghost">
+      <ng-icon name="lucideArrowLeft" class="h-4 w-4" />
+    </a>
+    <h1 class="text-2xl font-bold tracking-tight">New Project</h1>
+  </div>
+
+  @if (error()) {
+    <div class="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      {{ error() }}
+    </div>
+  }
+
+  <div class="rounded-xl border bg-card p-6 space-y-6">
+    <div class="space-y-2">
+      <label hlmLabel for="name">Project Name</label>
+      <input
+        hlmInput
+        id="name"
+        type="text"
+        placeholder="My 3D Project"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+      />
+    </div>
+
+    <div class="space-y-2">
+      <label hlmLabel for="description">Description (optional)</label>
+      <textarea
+        hlmInput
+        id="description"
+        placeholder="A short description of your project..."
+        rows="3"
+        [ngModel]="description()"
+        (ngModelChange)="description.set($event)"
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a routerLink="/projects" hlmBtn variant="outline">Cancel</a>
+    <button hlmBtn (click)="submit()" [disabled]="saving()">
+      @if (saving()) {
+        <hlm-spinner class="mr-2 h-4 w-4" />
+      }
+      Create Project
+    </button>
+  </div>
+</div>
