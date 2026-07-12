@@ -81,6 +81,10 @@ export class AuthService {
     this.currentUserSubject.next(null);
   }
 
+  getCurrentUserValue(): User | null {
+    return this.currentUserSubject.value;
+  }
+
   getToken(): string | null {
     if (!this.isBrowser) return null;
     return localStorage.getItem(TOKEN_KEY);
