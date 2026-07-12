@@ -107,6 +107,12 @@ services:
       MINIO_PUBLIC_PORT: ${MINIO_PUBLIC_PORT:-9000}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       postgres:
         condition: service_healthy
@@ -125,8 +131,11 @@ services:
     platform: linux/amd64
     container_name: msh-worker
     restart: unless-stopped
+    ports:
+      - "3001:3001"
     environment:
       NODE_ENV: production
+      WORKER_PORT: 3001
       DATABASE_URL: postgresql://msh:${POSTGRES_PASSWORD:-msh_secret}@postgres:5432/msh
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-msh}:${RABBITMQ_PASSWORD:-msh_secret}@rabbitmq:5672
       MINIO_ENDPOINT: minio
@@ -137,6 +146,12 @@ services:
       MINIO_USE_SSL: "false"
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost}
       MINIO_PUBLIC_PORT: ${MINIO_PUBLIC_PORT:-9000}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       postgres:
         condition: service_healthy
