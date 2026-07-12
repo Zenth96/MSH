@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideFolderKanban, lucideBox, lucideTrash2 } from '@ng-icons/lucide';
+import { lucideFolderOpen, lucideBox, lucideTrash2 } from '@ng-icons/lucide';
 import { HlmTableImports } from '@spartan-ng/helm/table';
 import { HlmBadge } from '@spartan-ng/helm/badge';
 import { HlmSpinner } from '@spartan-ng/helm/spinner';
@@ -13,7 +13,7 @@ import type { User } from '../../core/services/auth.service';
   selector: 'app-users',
   standalone: true,
   imports: [HlmTableImports, HlmBadge, HlmSpinner, DatePipe, HlmButton, NgIcon],
-  providers: [UsersService, provideIcons({ lucideFolderKanban, lucideBox, lucideTrash2 })],
+  providers: [UsersService, provideIcons({ lucideFolderOpen, lucideBox, lucideTrash2 })],
   templateUrl: './users.component.html',
 })
 export class UsersComponent implements OnInit {
@@ -34,7 +34,7 @@ export class UsersComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err.error?.message || err.message || 'Hiba a betöltéskor');
+        this.error.set(err.error?.message || err.message || 'Failed to load users');
         this.loading.set(false);
       },
     });
