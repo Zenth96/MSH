@@ -29,15 +29,8 @@ export const routes: Routes = [
       },
       {
         path: 'projects',
-        loadComponent: () =>
-          import('./shared/placeholder/placeholder.component').then(
-            (m) => m.PlaceholderComponent,
-          ),
-        data: {
-          title: 'Projects',
-          icon: 'folder',
-          description: 'Manage your 3D model projects. Create, organize, and collaborate on projects.',
-        },
+        loadChildren: () =>
+          import('./projects/projects.module').then((m) => m.ProjectsModule),
       },
       {
         path: 'models',

@@ -1,0 +1,133 @@
+<div class="p-6 space-y-6">
+  <div class="flex items-center gap-4">
+    <a routerLink="/projects" hlmBtn size="sm" variant="ghost">
+      <ng-icon name="lucideArrowLeft" class="h-4 w-4" />
+    </a>
+    <div class="flex-1 min-w-0">
+      @if (project()) {
+        <h1 class="text-2xl font-bold tracking-tight">{{ project()!.name }}</h1>
+        @if (project()!.description) {
+          <p class="text-muted-foreground mt-1">{{ project()!.description }}</p>
+        }
+      } @else if (!loading()) {
+        <h1 class="text-2xl font-bold tracking-tight text-muted-foreground">Project not found</h1>
+      }
+    </div>
+    @if (project()) {
+      <div class="flex items-center gap-2">
+        <a [routerLink]="['/projects', project()!.id, 'edit']" hlmBtn size="sm" variant="outline">
+          <ng-icon name="lucidePencil" class="mr-2 h-4 w-4" />
+          Edit
+        </a>
+        <hlm-alert-dialog (closed)="onDialogClosed($event)">
+          <button hlmAlertDialogTrigger hlmBtn size="sm" variant="destructive">
+            <ng-icon name="lucideTrash2" class="mr-2 h-4 w-4" />
+            Delete
+          </button>
+          <hlm-alert-dialog-content *hlmAlertDialogPortal="let ctx">
+            <hlm-alert-dialog-header>
+              <h2 hlmAlertDialogTitle>Delete project</h2>
+              <p hlmAlertDialogDescription>
+                Are you sure you want to delete "{{ project()!.name }}"?
+                This will permanently remove it and all of its models.
+                This action cannot be undone.
+              </p>
+            </hlm-alert-dialog-header>
+            <hlm-alert-dialog-footer>
+              <button hlmAlertDialogCancel>Cancel</button>
+              <button hlmAlertDialogAction variant="destructive" (click)="ctx.close('confirm')">Delete</button>
+            </hlm-alert-dialog-footer>
+          </hlm-alert-dialog-content>
+        </hlm-alert-dialog>
+      </div>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <hlm-spinner />
+    </div>
+  }
+
+  @if (error()) {
+    <div class="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      {{ error() }}
+    </div>
+  }
+
+  @if (!loading() && !error() && project()) {
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="rounded-xl border bg-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Models</h2>
+            <a [routerLink]="['/models']" [queryParams]="{ projectId: project()!.id }" hlmBtn size="sm">
+              <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" />
+              Upload Model
+            </a>
+          </div>
+
+          @if (project()!.models && project()!.models!.length > 0) {
+            <div class="space-y-3">
+              @for (model of project()!.models; track model.id) {
+                <div class="flex items-center justify-between rounded-lg border p-4">
+                  <div class="flex items-center gap-3">
+                    <ng-icon name="lucideBox" class="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p class="font-medium">{{ model.name }}</p>
+                      <p class="text-sm text-muted-foreground">
+                        {{ model.format | uppercase }} · {{ formatSize(model.fileSize) }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <hlm-badge [variant]="modelStatusVariantFn(model.status)">
+                      {{ model.status }}
+                    </hlm-badge>
+                    <a [routerLink]="['/viewer', model.id]" hlmBtn size="sm" variant="ghost">
+                      <ng-icon name="lucideExternalLink" class="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+              <ng-icon name="lucideBox" class="h-10 w-10 text-muted-foreground mb-3" />
+              <p class="text-sm text-muted-foreground">No models in this project yet.</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="rounded-xl border bg-card p-6">
+          <h3 class="text-sm font-semibold text-muted-foreground mb-4">Project Info</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-muted-foreground">Status</span>
+              <hlm-badge [variant]="statusVariant(project()!.status)">
+                {{ project()!.status }}
+              </hlm-badge>
+            </div>
+            <hlm-separator />
+            <div class="flex justify-between items-center">
+              <span class="text-muted-foreground">Models</span>
+              <span class="font-medium">{{ project()!.models?.length ?? 0 }}</span>
+            </div>
+            <hlm-separator />
+            <div class="flex justify-between items-center">
+              <span class="text-muted-foreground">Created</span>
+              <span>{{ project()!.createdAt | date:'mediumDate' }}</span>
+            </div>
+            <hlm-separator />
+            <div class="flex justify-between items-center">
+              <span class="text-muted-foreground">Updated</span>
+              <span>{{ project()!.updatedAt | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

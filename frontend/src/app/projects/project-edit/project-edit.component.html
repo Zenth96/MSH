@@ -1,0 +1,72 @@
+<div class="p-6 space-y-6 max-w-xl">
+  <div class="flex items-center gap-4">
+    <a [routerLink]="['/projects', projectId]" hlmBtn size="sm" variant="ghost">
+      <ng-icon name="lucideArrowLeft" class="h-4 w-4" />
+    </a>
+    <h1 class="text-2xl font-bold tracking-tight">Edit Project</h1>
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <hlm-spinner />
+    </div>
+  }
+
+  @if (error()) {
+    <div class="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      {{ error() }}
+    </div>
+  }
+
+  @if (!loading()) {
+    <div class="rounded-xl border bg-card p-6 space-y-6">
+      <div class="space-y-2">
+        <label hlmLabel for="name">Project Name</label>
+        <input
+          hlmInput
+          id="name"
+          type="text"
+          placeholder="My 3D Project"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+        />
+      </div>
+
+      <div class="space-y-2">
+        <label hlmLabel for="description">Description (optional)</label>
+        <textarea
+          hlmInput
+          id="description"
+          placeholder="A short description of your project..."
+          rows="3"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
+        ></textarea>
+      </div>
+
+      <div class="space-y-2">
+        <label hlmLabel for="status">Status</label>
+        <select
+          hlmInput
+          id="status"
+          [ngModel]="status()"
+          (ngModelChange)="status.set($event)"
+        >
+          <option value="DRAFT">Draft</option>
+          <option value="ACTIVE">Active</option>
+          <option value="ARCHIVED">Archived</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <a [routerLink]="['/projects', projectId]" hlmBtn variant="outline">Cancel</a>
+      <button hlmBtn (click)="submit()" [disabled]="saving()">
+        @if (saving()) {
+          <hlm-spinner class="mr-2 h-4 w-4" />
+        }
+        Save Changes
+      </button>
+    </div>
+  }
+</div>
