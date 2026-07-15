@@ -1,34 +1,43 @@
 {
   "name": "worker",
   "version": "0.0.1",
-  "type": "module",
   "description": "MSH Worker - NestJS Microservice for model processing",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/src/main.js"
+    "start:prod": "node dist/src/main.js",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@gltf-transform/core": "^4.0.0",
+    "@gltf-transform/functions": "^4.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
-    "@nestjs/microservices": "^11.0.1",
-    "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
-    "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.4",
+    "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
+    "@types/amqplib": "^0.10.5",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.20.0",
     "prisma": "^7.8.0",
-    "typescript": "^5.7.3",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
+  },
+  "allowScripts": {
+    "prisma@7.8.0": true,
+    "@prisma/engines@7.8.0": true,
+    "sharp@0.34.5": true
   }
 }
