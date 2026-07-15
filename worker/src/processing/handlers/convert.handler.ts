@@ -4,6 +4,8 @@ import { resample, prune } from '@gltf-transform/functions';
 import { StorageService } from '../../storage/storage.service.js';
 import type { JobHandler, JobMessage } from './job.handler.js';
 
+const TEXT_FORMATS = new Set(['gltf', 'obj']);
+
 @Injectable()
 export class ConvertHandler implements JobHandler {
   private readonly logger = new Logger(ConvertHandler.name);
@@ -15,17 +17,16 @@ export class ConvertHandler implements JobHandler {
     const buffer = await this.storage.download(message.storageKey);
 
     const io = new NodeIO();
-
-    let doc: Document;
     const format = message.format.toLowerCase();
 
-    if (format === 'obj') {
+    this.logger.log(`CONVERT: Converting ${message.fileName} (${format} -> glb)`);
+
+    let doc: Document;
+    if (TEXT_FORMATS.has(format)) {
       doc = await io.read(buffer.toString('utf-8'));
     } else {
       doc = await io.readBinary(buffer);
     }
-
-    this.logger.log(`CONVERT: Converting ${message.fileName} (${format} -> glb)`);
 
     await doc.transform(
       resample(),

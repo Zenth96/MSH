@@ -28,7 +28,7 @@ export class OptimizeHandler implements JobHandler {
 
     const optimized = await io.writeBinary(doc);
 
-    const ext = message.format === 'glb' ? 'glb' : 'glb';
+    const ext = message.format === 'gltf' ? 'gltf' : 'glb';
     const optimizedKey = message.storageKey.replace(/\.[^.]+$/, `_optimized.${ext}`);
 
     await this.storage.upload(Buffer.from(optimized), optimizedKey, 'model/gltf-binary');
