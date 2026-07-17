@@ -1,0 +1,132 @@
+<div class="mx-auto max-w-2xl space-y-8 p-6">
+  <!-- Vissza gomb -->
+  <div class="flex items-center gap-3">
+    <a [routerLink]="projectId() ? ['/projects', projectId()] : ['/projects']" hlmBtn size="sm" variant="ghost">
+      <ng-icon name="lucideArrowLeft" class="mr-1 h-4 w-4" />
+      Back to Project
+    </a>
+    <h1 class="text-2xl font-bold tracking-tight">Upload 3D Model</h1>
+  </div>
+
+  @if (phase() === 'uploading') {
+    <!-- UPLOADING: progress bar -->
+    <div class="rounded-xl border bg-card p-8 text-center">
+      <ng-icon name="lucideUpload" class="text-primary mx-auto mb-4 h-12 w-12" />
+      <h2 class="mb-4 text-lg font-semibold">Uploading...</h2>
+      <div class="bg-muted mx-auto mb-2 h-3 w-full max-w-sm overflow-hidden rounded-full">
+        <div
+          class="bg-primary h-full rounded-full transition-all duration-300"
+          [style.width.%]="uploadProgress()"
+        ></div>
+      </div>
+      <p class="text-muted-foreground text-sm">{{ uploadProgress() }}% uploaded</p>
+    </div>
+  } @else if (phase() === 'polling') {
+    <!-- POLLING: feldolgozás spinner -->
+    <div class="rounded-xl border bg-card p-8 text-center">
+      <hlm-spinner class="mx-auto mb-4" />
+      <h2 class="mb-2 text-lg font-semibold">Processing model...</h2>
+      <p class="text-muted-foreground text-sm">
+        Optimizing and preparing your 3D model ({{ pollAttempts() }}s)
+      </p>
+    </div>
+  } @else if (phase() === 'success') {
+    <!-- SIKER -->
+    <div class="rounded-xl border bg-card p-8 text-center">
+      <div class="bg-emerald-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+        <ng-icon name="lucideCheck" class="text-emerald-600 h-8 w-8" />
+      </div>
+      <h2 class="mb-1 text-lg font-semibold text-emerald-600">Upload Successful!</h2>
+      <p class="text-muted-foreground mb-2 text-sm">{{ uploadedModel()?.name }} is ready.</p>
+      <hlm-badge variant="default" class="mb-6">READY</hlm-badge>
+      <div class="flex items-center justify-center gap-3">
+        <button (click)="navigateBack()" hlmBtn variant="outline">
+          <ng-icon name="lucideArrowLeft" class="mr-2 h-4 w-4" />
+          Back to Project
+        </button>
+        <a [routerLink]="['/viewer', uploadedModel()?.id]" hlmBtn>
+          View Model
+        </a>
+      </div>
+    </div>
+  } @else if (phase() === 'error') {
+    <!-- HIBA -->
+    <div class="rounded-xl border bg-card p-8 text-center">
+      <div class="bg-red-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+        <ng-icon name="lucideAlertCircle" class="text-red-600 h-8 w-8" />
+      </div>
+      <h2 class="mb-1 text-lg font-semibold text-destructive">Upload Failed</h2>
+      <p class="text-muted-foreground mb-6 text-sm">{{ errorMessage() }}</p>
+      <button (click)="clearSelectedFile()" hlmBtn>Try Again</button>
+    </div>
+  } @else {
+    <!-- IDLE: fájl kiválasztás -->
+    @if (!selectedFile()) {
+      <!-- Drag & drop zone -->
+      <div
+        class="border-border hover:bg-accent/50 flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed p-12 text-center transition-colors"
+        (dragover)="onDragOver($event)"
+        (drop)="onDrop($event)"
+        (click)="fileInput.click()"
+      >
+        <div class="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-xl">
+          <ng-icon name="lucideUpload" class="text-primary h-7 w-7" />
+        </div>
+        <div>
+          <p class="text-sm font-semibold">Drop your 3D model here</p>
+          <p class="text-muted-foreground mt-1 text-xs">.glb, .gltf, .obj, .fbx — up to 200 MB</p>
+        </div>
+        <button hlmBtn size="sm" variant="outline" class="pointer-events-none">Browse Files</button>
+        <input #fileInput type="file" accept=".glb,.gltf,.obj,.fbx" class="hidden" (change)="onFileInputChange($event)" />
+      </div>
+    }
+
+    @if (selectedFile()) {
+      <!-- Kiválasztott fájl adatai -->
+      <div class="rounded-xl border bg-card p-6">
+        <div class="mb-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+              <ng-icon name="lucideFile" class="text-primary h-5 w-5" />
+            </div>
+            <div>
+              <p class="font-medium">{{ selectedFile()?.name }}</p>
+              <p class="text-muted-foreground text-xs">.{{ fileExt }} · {{ fileSizeMB }} MB</p>
+            </div>
+          </div>
+          <button (click)="clearSelectedFile()" hlmBtn size="sm" variant="ghost">
+            <ng-icon name="lucideX" class="h-4 w-4" />
+          </button>
+        </div>
+
+        @if (validationError()) {
+          <div class="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <ng-icon name="lucideAlertCircle" class="h-4 w-4 shrink-0" />
+            {{ validationError() }}
+          </div>
+        }
+
+        <!-- Modell név -->
+        <div class="mb-4">
+          <label class="mb-1.5 block text-sm font-medium">Model Name</label>
+          <input
+            type="text"
+            [(ngModel)]="modelName"
+            placeholder="Enter a name for the model"
+            class="border-border focus-visible:ring-ring flex h-10 w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          />
+        </div>
+
+        <!-- Upload gomb -->
+        <button
+          (click)="startUpload()"
+          hlmBtn
+          class="w-full"
+          [disabled]="!modelName().trim() || !!validationError()"
+        >
+          <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" />Upload Model
+        </button>
+      </div>
+    }
+  }
+</div>
