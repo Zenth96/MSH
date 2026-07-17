@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Role } from './role.enum.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import { UpdateRoleDto } from './dto/update-role.dto.js';
 import { UserQueryDto } from './dto/user-query.dto.js';
 
 @Injectable()
@@ -28,6 +30,14 @@ export class UsersService {
   async update(id: string, dto: UpdateUserDto) {
     await this.findOne(id);
     return this.prisma.user.update({ where: { id }, data: dto });
+  }
+
+  async updateRole(id: string, dto: UpdateRoleDto, requesterId: string) {
+    const user = await this.findOne(id);
+    if (requesterId === id && dto.role !== Role.ADMIN) {
+      throw new ForbiddenException('Cannot demote yourself');
+    }
+    return this.prisma.user.update({ where: { id }, data: { role: dto.role } });
   }
 
   async remove(id: string) {
