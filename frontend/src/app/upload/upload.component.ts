@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +8,8 @@ import { lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucide
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmSpinner } from '@spartan-ng/helm/spinner';
 import { HlmBadge } from '@spartan-ng/helm/badge';
-import { switchMap, filter, timer, takeWhile, tap } from 'rxjs';
+import { switchMap, filter, timer, takeWhile, tap, Subscription } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UploadService } from './upload.service';
 import type { Model3D } from '../projects/project.model';
 
@@ -35,11 +36,12 @@ export class UploadComponent {
   private uploadService = inject(UploadService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   /** A kiválasztott fájl. */
   selectedFile = signal<File | null>(null);
   /** A modell neve (pre-fill a fájlnévből). */
-  modelName = signal('');
+  modelName = '';
   /** projectId az URL-ből. */
   projectId = signal<string | null>(this.route.snapshot.queryParamMap.get('projectId'));
   /** Validációs hiba. */
@@ -54,6 +56,8 @@ export class UploadComponent {
   uploadedModel = signal<Model3D | null>(null);
   /** Polling számláló. */
   pollAttempts = signal(0);
+  /** Aktuális upload subscription — cancel-hez. */
+  private uploadSubscription: Subscription | null = null;
 
   /** Fájl formátum (kiterjesztés). */
   get fileExt(): string {
@@ -110,13 +114,13 @@ export class UploadComponent {
     }
 
     this.selectedFile.set(file);
-    this.modelName.set(file.name.replace(/\.[^/.]+$/, ''));
+    this.modelName = file.name.replace(/\.[^/.]+$/, '');
   }
 
   /** Kiválasztott fájl eltávolítása. */
   clearSelectedFile(): void {
     this.selectedFile.set(null);
-    this.modelName.set('');
+    this.modelName = '';
     this.validationError.set('');
     this.phase.set('idle');
     this.uploadProgress.set(0);
@@ -134,7 +138,7 @@ export class UploadComponent {
    */
   startUpload(): void {
     const file = this.selectedFile();
-    const name = this.modelName().trim();
+    const name = this.modelName.trim();
     const projectId = this.projectId();
 
     if (!file || !name || !projectId) {
@@ -147,7 +151,8 @@ export class UploadComponent {
     this.uploadProgress.set(0);
     this.errorMessage.set('');
 
-    this.uploadService.upload(file, name, projectId).pipe(
+    this.uploadSubscription = this.uploadService.upload(file, name, projectId).pipe(
+      takeUntilDestroyed(this.destroyRef),
       tap((event: HttpEvent<Model3D>) => {
         if (event.type === HttpEventType.UploadProgress && event.total) {
           this.uploadProgress.set(Math.round((event.loaded / event.total) * 100));
@@ -201,5 +206,12 @@ export class UploadComponent {
   navigateBack(): void {
     const pid = this.projectId();
     this.router.navigate(pid ? ['/projects', pid] : ['/projects']);
+  }
+
+  /** Upload megszakítása. */
+  cancelUpload(): void {
+    this.uploadSubscription?.unsubscribe();
+    this.uploadSubscription = null;
+    this.clearSelectedFile();
   }
 }

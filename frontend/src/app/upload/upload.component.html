@@ -19,7 +19,11 @@
           [style.width.%]="uploadProgress()"
         ></div>
       </div>
-      <p class="text-muted-foreground text-sm">{{ uploadProgress() }}% uploaded</p>
+      <p class="text-muted-foreground mb-4 text-sm">{{ uploadProgress() }}% uploaded</p>
+      <button (click)="cancelUpload()" hlmBtn variant="outline" size="sm">
+        <ng-icon name="lucideX" class="mr-1 h-4 w-4" />
+        Cancel
+      </button>
     </div>
   } @else if (phase() === 'polling') {
     <!-- POLLING: feldolgozás spinner -->
@@ -112,6 +116,7 @@
           <input
             type="text"
             [(ngModel)]="modelName"
+            name="modelName"
             placeholder="Enter a name for the model"
             class="border-border focus-visible:ring-ring flex h-10 w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           />
@@ -122,7 +127,7 @@
           (click)="startUpload()"
           hlmBtn
           class="w-full"
-          [disabled]="!modelName().trim() || !!validationError()"
+          [disabled]="!modelName.trim() || !!validationError()"
         >
           <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" />Upload Model
         </button>
