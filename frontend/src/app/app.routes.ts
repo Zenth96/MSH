@@ -33,6 +33,11 @@ export const routes: Routes = [
           import('./projects/projects.module').then((m) => m.ProjectsModule),
       },
       {
+        path: 'upload',
+        loadChildren: () =>
+          import('./upload/upload.module').then((m) => m.UploadModule),
+      },
+      {
         path: 'models',
         loadComponent: () =>
           import('./shared/placeholder/placeholder.component').then(

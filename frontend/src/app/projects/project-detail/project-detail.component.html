@@ -61,9 +61,8 @@
         <div class="rounded-xl border bg-card p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold">Models</h2>
-            <a [routerLink]="['/models']" [queryParams]="{ projectId: project()!.id }" hlmBtn size="sm">
-              <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" />
-              Upload Model
+            <a [routerLink]="['/upload']" [queryParams]="{ projectId: project()!.id }" hlmBtn size="sm">
+              <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" /> Upload Model
             </a>
           </div>
 
