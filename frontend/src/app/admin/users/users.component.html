@@ -31,9 +31,16 @@
               <td hlmTd class="font-medium">{{ user.name || '—' }}</td>
               <td hlmTd>{{ user.email }}</td>
               <td hlmTd>
-                <hlm-badge [variant]="roleVariant(user.role)">
-                  {{ user.role }}
-                </hlm-badge>
+                <select
+                  [value]="user.role"
+                  (change)="onRoleChange(user.id, $event)"
+                  [disabled]="updating() === user.id"
+                  class="border-input bg-input/30 rounded-4xl border px-3 py-1.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="EDITOR">EDITOR</option>
+                  <option value="VIEWER">VIEWER</option>
+                </select>
               </td>
               <td hlmTd>{{ user.createdAt | date:'short' }}</td>
               <td hlmTd>
@@ -46,9 +53,14 @@
                     <ng-icon name="lucideBox" />
                     Models
                   </button>
-                  <button hlmBtn size="sm" variant="destructive" disabled>
-                    <ng-icon name="lucideTrash2" />
-                    Delete
+                  <button hlmBtn size="sm" variant="destructive" [disabled]="deleting() === user.id" (click)="confirmDelete(user)">
+                    @if (deleting() === user.id) {
+                      <ng-icon name="lucideLoader2" class="animate-spin" />
+                      Deleting...
+                    } @else {
+                      <ng-icon name="lucideTrash2" />
+                      Delete
+                    }
                   </button>
                 </div>
               </td>
