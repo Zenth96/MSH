@@ -12,7 +12,7 @@ export class UsersService {
   }
 
   updateRole(id: string, role: User['role']): Observable<User> {
-    return this.api.patch<User>(`/users/${id}`, { role });
+    return this.api.patch<User>(`/users/${id}/role`, { role });
   }
 
   delete(id: string): Observable<void> {

@@ -40,7 +40,10 @@ export class UsersService {
     return this.prisma.user.update({ where: { id }, data: { role: dto.role } });
   }
 
-  async remove(id: string) {
+  async remove(id: string, requesterId: string) {
+    if (requesterId === id) {
+      throw new ForbiddenException('Cannot delete yourself');
+    }
     await this.findOne(id);
     return this.prisma.user.delete({ where: { id } });
   }

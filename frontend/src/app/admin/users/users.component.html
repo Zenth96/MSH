@@ -53,8 +53,8 @@
                     <ng-icon name="lucideBox" />
                     Models
                   </button>
-                  <button hlmBtn size="sm" variant="destructive" [disabled]="deleting()" (click)="confirmDelete(user)">
-                    @if (deleting()) {
+                  <button hlmBtn size="sm" variant="destructive" [disabled]="deleting() === user.id" (click)="confirmDelete(user)">
+                    @if (deleting() === user.id) {
                       <ng-icon name="lucideLoader2" class="animate-spin" />
                       Deleting...
                     } @else {

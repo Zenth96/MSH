@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsUUID } from 'class-validator';
-import { ModelStatus } from '../../generated/prisma/enums.js';
+import { ModelStatus } from '@prisma/client';
 
 export class ModelQueryDto {
   @IsString()

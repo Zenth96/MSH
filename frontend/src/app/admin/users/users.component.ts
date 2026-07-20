@@ -22,7 +22,7 @@ export class UsersComponent implements OnInit {
   users: User[] = [];
   loading = signal(true);
   error = signal('');
-  deleting = signal(false);
+  deleting = signal<string | null>(null);
   updating = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -67,16 +67,16 @@ export class UsersComponent implements OnInit {
 
   confirmDelete(user: User): void {
     if (!confirm(`Are you sure you want to delete ${user.name || user.email}? This action cannot be undone.`)) return;
-    this.deleting.set(true);
+    this.deleting.set(user.id);
     this.usersService.delete(user.id).subscribe({
       next: () => {
         this.users = this.users.filter(u => u.id !== user.id);
         toast.success('User deleted successfully');
-        this.deleting.set(false);
+        this.deleting.set(null);
       },
       error: (err) => {
         toast.error(err.error?.message || 'Failed to delete user');
-        this.deleting.set(false);
+        this.deleting.set(null);
       },
     });
   }
