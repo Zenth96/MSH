@@ -1,0 +1,75 @@
+<div class="flex min-h-dvh items-center justify-center bg-background">
+  <div hlmCard class="w-full max-w-sm">
+    <div hlmCardHeader class="items-center pb-2">
+      <ng-icon name="lucideMailCheck" class="mb-2 h-10 w-10 text-primary" />
+      <h3 hlmCardTitle class="text-xl">Verify your email</h3>
+      <p hlmCardDescription>
+        We sent a 6-digit code to <strong class="text-foreground">{{ email() }}</strong>
+      </p>
+    </div>
+    <div hlmCardContent>
+      @if (error) {
+        <div class="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {{ error }}
+        </div>
+      }
+      @if (success) {
+        <div class="mb-4 rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-500">
+          {{ success }}
+        </div>
+      }
+
+      <div class="mb-6">
+        <label hlmLabel class="mb-3 block text-center text-sm">Enter verification code</label>
+        <div class="flex items-center justify-center gap-2">
+          @for (digit of code; track $index) {
+            <input
+              #codeInput
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              [value]="digit"
+              (input)="onInput($index, $event)"
+              (keydown)="onKeydown($index, $event)"
+              (paste)="onPaste($event)"
+              class="h-12 w-10 rounded-lg border border-border bg-background text-center text-lg font-semibold text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary [&:not(:placeholder-shown)]:border-primary"
+            />
+          }
+        </div>
+      </div>
+
+      <button hlmBtn type="button" class="w-full" [disabled]="code.some(d => !d) || loading()" (click)="submit()">
+        @if (loading()) {
+          <hlm-spinner class="mr-2 h-4 w-4" />
+          Verifying…
+        } @else {
+          Verify email
+        }
+      </button>
+
+      <div class="mt-4 text-center">
+        <button
+          type="button"
+          class="text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          [disabled]="resending() || countdown() > 0"
+          (click)="resendCode()"
+        >
+          @if (resending()) {
+            <hlm-spinner class="mr-2 inline h-3 w-3" />
+            Sending…
+          } @else if (countdown() > 0) {
+            Resend in {{ countdown() }}s
+          } @else {
+            Resend code
+          }
+        </button>
+      </div>
+    </div>
+    <div hlmCardFooter class="justify-center">
+      <p class="text-muted-foreground text-sm">
+        Wrong email?
+        <a routerLink="/auth/register" class="text-primary font-medium hover:underline">Register again</a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -4,11 +4,9 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
-import { PrismaModule } from '../prisma/prisma.module.js';
 
 @Module({
   imports: [
-    PrismaModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'change_me_in_production',
       signOptions: { expiresIn: '7d' },

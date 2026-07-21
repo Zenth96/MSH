@@ -11,6 +11,8 @@ import { CurrentUser } from './decorators/current-user.decorator.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { SendVerifyCodeDto } from './dto/send-verify-code.dto.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -38,5 +40,15 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getMe(@CurrentUser('sub') userId: string) {
     return this.authService.getMe(userId);
+  }
+
+  @Post('send-verify-code')
+  sendVerifyCode(@Body() dto: SendVerifyCodeDto) {
+    return this.authService.sendVerifyCode(dto);
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
   }
 }

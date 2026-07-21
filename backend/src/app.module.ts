@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module.js';
 import { ModelsModule } from './models/models.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module.js';
+import { MailModule } from './mail/mail.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -18,9 +19,9 @@ import { AppService } from './app.service.js';
     ProjectsModule,
     ModelsModule,
     RabbitMQModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-
 export class AppModule {}
