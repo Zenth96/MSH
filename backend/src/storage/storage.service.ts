@@ -109,4 +109,10 @@ export class StorageService {
 
     await this.client.send(command);
   }
+
+  async moveObject(sourceKey: string, destKey: string): Promise<string> {
+    await this.copy(sourceKey, destKey);
+    await this.delete(sourceKey);
+    return destKey;
+  }
 }

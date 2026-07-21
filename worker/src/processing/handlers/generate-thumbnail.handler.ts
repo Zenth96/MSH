@@ -101,7 +101,7 @@ export class GenerateThumbnailHandler implements JobHandler {
       page.on('console', msg => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
       page.on('pageerror', err => consoleLogs.push(`[PAGE_ERROR] ${(err as Error).message}`));
 
-      await page.setViewport({ width: 256, height: 256 });
+      await page.setViewport({ width: 512, height: 512 });
       await page.goto(`http://127.0.0.1:${port}/render.html`, { waitUntil: 'networkidle0' });
 
       await page.waitForSelector('#done, #error', { timeout: 90000 });
