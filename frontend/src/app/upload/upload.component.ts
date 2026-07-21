@@ -1,16 +1,17 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType, HttpEvent } from '@angular/common/http';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink, lucidePaperclip } from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink, lucidePaperclip, lucideFolderOpen, lucideChevronDown, lucideSearch } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmSpinner } from '@spartan-ng/helm/spinner';
 import { HlmBadge } from '@spartan-ng/helm/badge';
 import { switchMap, filter, tap, Subscription, Observable } from 'rxjs';
 import { UploadService } from './upload.service';
-import type { Model3D } from '../projects/project.model';
+import { ApiService } from '../core/services/api.service';
+import type { Model3D, Project } from '../projects/project.model';
 
 const ALLOWED_FORMATS = ['glb', 'gltf', 'obj', 'fbx'];
 const MAX_FILE_SIZE = 200 * 1024 * 1024;
@@ -29,17 +30,31 @@ function isRequiredRef(uri: string, ext: string): boolean {
     CommonModule, FormsModule, RouterLink, NgIcon,
     HlmButton, HlmSpinner, HlmBadge,
   ],
-  viewProviders: [provideIcons({ lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink, lucidePaperclip })],
+  viewProviders: [provideIcons({ lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink, lucidePaperclip, lucideFolderOpen, lucideChevronDown, lucideSearch })],
   templateUrl: './upload.component.html',
 })
-export class UploadComponent {
+export class UploadComponent implements OnInit {
   private uploadService = inject(UploadService);
+  private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   selectedFile = signal<File | null>(null);
   modelName = '';
   projectId = signal<string | null>(this.route.snapshot.queryParamMap.get('projectId'));
+  projects = signal<Project[]>([]);
+  selectedProjectId = signal<string>(this.route.snapshot.queryParamMap.get('projectId') ?? '');
+  projectDropdownOpen = signal(false);
+  projectSearchQuery = signal('');
+  filteredProjects = computed(() => {
+    const q = this.projectSearchQuery().toLowerCase();
+    return q ? this.projects().filter((p) => p.name.toLowerCase().includes(q)) : this.projects();
+  });
+  selectedProjectName = computed(() => {
+    const pid = this.selectedProjectId();
+    if (!pid) return '';
+    return this.projects().find((p) => p.id === pid)?.name ?? '';
+  });
   validationError = signal('');
   uploadProgress = signal(0);
   phase = signal<'idle' | 'uploading' | 'polling' | 'success' | 'error'>('idle');
@@ -51,6 +66,19 @@ export class UploadComponent {
 
   externalRefs = signal<string[]>([]);
   refFiles = signal<Map<string, File>>(new Map());
+
+  ngOnInit(): void {
+    this.api.getProjects().subscribe({
+      next: (projects) => this.projects.set(projects),
+      error: () => {},
+    });
+  }
+
+  selectProject(id: string): void {
+    this.selectedProjectId.set(id);
+    this.projectDropdownOpen.set(false);
+    this.projectSearchQuery.set('');
+  }
 
   get fileExt(): string {
     return this.selectedFile()?.name?.split('.').pop()?.toLowerCase() ?? '';
@@ -239,7 +267,7 @@ export class UploadComponent {
     const name = this.modelName.trim();
     const projectId = this.projectId();
 
-    if (!file || !name || !projectId) {
+    if (!file || !name || !this.selectedProjectId()) {
       this.errorMessage.set('Please select a file, enter a name, and ensure a project is selected.');
       this.phase.set('error');
       return;
@@ -264,7 +292,7 @@ export class UploadComponent {
       uploadFile = await this.embedGltfRefs(file);
     }
 
-    this.uploadSubscription = this.uploadService.upload(uploadFile, name, projectId, refFiles).pipe(
+    this.uploadSubscription = this.uploadService.upload(uploadFile, name, this.selectedProjectId(), refFiles).pipe(
       tap((event: HttpEvent<Model3D>) => {
         if (event.type === HttpEventType.UploadProgress && event.total) {
           this.uploadProgress.set(Math.round((event.loaded / event.total) * 100));
@@ -345,8 +373,8 @@ export class UploadComponent {
   }
 
   navigateBack(): void {
-    const pid = this.projectId();
-    this.router.navigate(pid ? ['/projects', pid] : ['/projects']);
+    const pid = this.selectedProjectId() || this.projectId();
+    this.router.navigate(pid ? ['/app/projects', pid] : ['/app/projects']);
   }
 
   cancelUpload(): void {

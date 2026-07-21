@@ -7,6 +7,7 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   models?: Model3D[];
+  _count?: { models: number };
 }
 
 export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
