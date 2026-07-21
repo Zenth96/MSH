@@ -1,26 +1,26 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpEventType, HttpEvent } from '@angular/common/http';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink } from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink, lucidePaperclip } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmSpinner } from '@spartan-ng/helm/spinner';
 import { HlmBadge } from '@spartan-ng/helm/badge';
-import { switchMap, filter, timer, takeWhile, tap, Subscription } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap, filter, tap, Subscription, Observable } from 'rxjs';
 import { UploadService } from './upload.service';
 import type { Model3D } from '../projects/project.model';
 
-/** Elfogadott 3D formátumok. */
 const ALLOWED_FORMATS = ['glb', 'gltf', 'obj', 'fbx'];
-/** Maximum fájlméret byte-ban (200 MB). */
 const MAX_FILE_SIZE = 200 * 1024 * 1024;
-/** Polling időköz (ms). */
 const POLL_INTERVAL = 2000;
-/** Maximum polling próbálkozások (2 perc). */
-const MAX_POLL_ATTEMPTS = 60;
+const MAX_POLL_ATTEMPTS = 300;
+
+function isRequiredRef(uri: string, ext: string): boolean {
+  if (ext === 'obj') return uri.endsWith('.mtl');
+  return uri.endsWith('.bin') || uri.endsWith('.buf');
+}
 
 @Component({
   selector: 'app-upload',
@@ -29,54 +29,45 @@ const MAX_POLL_ATTEMPTS = 60;
     CommonModule, FormsModule, RouterLink, NgIcon,
     HlmButton, HlmSpinner, HlmBadge,
   ],
-  viewProviders: [provideIcons({ lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink })],
+  viewProviders: [provideIcons({ lucideArrowLeft, lucideUpload, lucideFile, lucideCheck, lucideX, lucideAlertCircle, lucideExternalLink, lucidePaperclip })],
   templateUrl: './upload.component.html',
 })
 export class UploadComponent {
   private uploadService = inject(UploadService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private destroyRef = inject(DestroyRef);
 
-  /** A kiválasztott fájl. */
   selectedFile = signal<File | null>(null);
-  /** A modell neve (pre-fill a fájlnévből). */
   modelName = '';
-  /** projectId az URL-ből. */
   projectId = signal<string | null>(this.route.snapshot.queryParamMap.get('projectId'));
-  /** Validációs hiba. */
   validationError = signal('');
-  /** Feltöltés százalék (0-100). */
   uploadProgress = signal(0);
-  /** Fázis: idle | uploading | polling | success | error. */
   phase = signal<'idle' | 'uploading' | 'polling' | 'success' | 'error'>('idle');
-  /** Hibaüzenet. */
   errorMessage = signal('');
-  /** A feltöltött modell. */
   uploadedModel = signal<Model3D | null>(null);
-  /** Polling számláló. */
   pollAttempts = signal(0);
-  /** Aktuális upload subscription — cancel-hez. */
+  processingElapsed = () => Math.max(0, (this.pollAttempts() - 1) * 2);
   private uploadSubscription: Subscription | null = null;
 
-  /** Fájl formátum (kiterjesztés). */
+  externalRefs = signal<string[]>([]);
+  refFiles = signal<Map<string, File>>(new Map());
+
   get fileExt(): string {
     return this.selectedFile()?.name?.split('.').pop()?.toLowerCase() ?? '';
   }
 
-  /** Fájl méret MB-ban. */
   get fileSizeMB(): string {
     const file = this.selectedFile();
     return file ? (file.size / (1024 * 1024)).toFixed(1) : '0';
   }
 
-  /** Drag over — böngésző alapértelmezett megakadályozása. */
+  isRequiredRef = (uri: string) => isRequiredRef(uri, this.fileExt);
+
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
   }
 
-  /** Drop — fájl kivétele a drag eventből. */
   onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -84,7 +75,6 @@ export class UploadComponent {
     if (file) this.validateAndSelect(file);
   }
 
-  /** File input változás — fájl kiválasztás a dialógusból. */
   onFileInputChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -92,15 +82,13 @@ export class UploadComponent {
     input.value = '';
   }
 
-  /**
-   * Fájl validálása és kiválasztása.
-   * Ellenőrzi a formátumot és a méretet a specifikáció szerint.
-   */
-  private validateAndSelect(file: File): void {
+  private async validateAndSelect(file: File): Promise<void> {
     this.validationError.set('');
     this.errorMessage.set('');
     this.phase.set('idle');
     this.uploadProgress.set(0);
+    this.externalRefs.set([]);
+    this.refFiles.set(new Map());
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
     if (!ALLOWED_FORMATS.includes(ext)) {
@@ -115,9 +103,106 @@ export class UploadComponent {
 
     this.selectedFile.set(file);
     this.modelName = file.name.replace(/\.[^/.]+$/, '');
+
+    let refs: string[] = [];
+    if (ext === 'gltf') {
+      refs = await this.detectGltfRefs(file);
+    } else if (ext === 'obj') {
+      refs = await this.detectObjRefs(file);
+    } else if (ext === 'fbx') {
+      refs = await this.detectFbxRefs(file);
+    }
+    if (refs.length) {
+      this.externalRefs.set(refs);
+    }
   }
 
-  /** Kiválasztott fájl eltávolítása. */
+  private async detectGltfRefs(file: File): Promise<string[]> {
+    try {
+      const text = await file.text();
+      const gltf = JSON.parse(text);
+      const refs = new Set<string>();
+      if (gltf.buffers) for (const b of gltf.buffers) {
+        if (b.uri && !b.uri.startsWith('data:') && !b.uri.startsWith('http') && !b.uri.startsWith('blob:')) refs.add(b.uri);
+      }
+      if (gltf.images) for (const i of gltf.images) {
+        if (i.uri && !i.uri.startsWith('data:') && !i.uri.startsWith('http') && !i.uri.startsWith('blob:')) refs.add(i.uri);
+      }
+      return [...refs];
+    } catch {
+      return [];
+    }
+  }
+
+  private async detectObjRefs(file: File): Promise<string[]> {
+    try {
+      const text = await file.text();
+      const refs = new Set<string>();
+      const mtlMatch = text.match(/^mtllib\s+(.+)$/im);
+      if (mtlMatch) {
+        const mtlFile = mtlMatch[1].trim().split(/[\\/]/).pop() || mtlMatch[1].trim();
+        refs.add(mtlFile);
+      }
+      return [...refs];
+    } catch {
+      return [];
+    }
+  }
+
+  private async detectFbxRefs(file: File): Promise<string[]> {
+    try {
+      const buf = await file.arrayBuffer();
+      const view = new Uint8Array(buf);
+      const text = new TextDecoder('utf-8', { fatal: false }).decode(view);
+      const texExts = /\.(png|jpg|jpeg|tga|bmp|tif|tiff|dds)/gi;
+      const found = new Set<string>();
+      let m;
+      while ((m = texExts.exec(text)) !== null) {
+        const start = Math.max(0, m.index - 40);
+        const segment = text.slice(start, m.index + m[0].length);
+        const nameMatch = segment.match(/([^\\\/:\s"]+\.(png|jpg|jpeg|tga|bmp|tif|tiff|dds))/i);
+        if (nameMatch) found.add(nameMatch[1]);
+      }
+      return [...found];
+    } catch {
+      return [];
+    }
+  }
+
+  private fileToDataUri(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  onRefFilesChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files?.length) return;
+
+    const refs = this.externalRefs();
+    const matched = new Map(this.refFiles());
+
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      if (refs.includes(f.name)) {
+        matched.set(f.name, f);
+      }
+    }
+
+    this.refFiles.set(matched);
+    input.value = '';
+  }
+
+  removeRefFile(name: string): void {
+    const m = new Map(this.refFiles());
+    m.delete(name);
+    this.refFiles.set(m);
+  }
+
   clearSelectedFile(): void {
     this.selectedFile.set(null);
     this.modelName = '';
@@ -125,18 +210,31 @@ export class UploadComponent {
     this.phase.set('idle');
     this.uploadProgress.set(0);
     this.errorMessage.set('');
+    this.externalRefs.set([]);
+    this.refFiles.set(new Map());
   }
 
-  /**
-   * Feltöltés indítása.
-   * Flow a specifikáció alapján:
-   *   1. Validáció
-   *   2. POST /api/models/upload (multipart)
-   *   3. Progress bar frissítése UploadProgress eseményekből
-   *   4. Response után: polling a modell státuszára
-   *   5. READY → success, ERROR → error, timeout → error
-   */
-  startUpload(): void {
+  private async embedGltfRefs(gltfFile: File): Promise<File> {
+    const text = await gltfFile.text();
+    const gltf = JSON.parse(text);
+    const refs = this.refFiles();
+
+    if (gltf.buffers) for (const b of gltf.buffers) {
+      if (b.uri && refs.has(b.uri)) {
+        b.uri = await this.fileToDataUri(refs.get(b.uri)!);
+      }
+    }
+    if (gltf.images) for (const i of gltf.images) {
+      if (i.uri && refs.has(i.uri)) {
+        i.uri = await this.fileToDataUri(refs.get(i.uri)!);
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(gltf)], { type: 'model/gltf+json' });
+    return new File([blob], gltfFile.name, { type: 'model/gltf+json' });
+  }
+
+  async startUpload(): Promise<void> {
     const file = this.selectedFile();
     const name = this.modelName.trim();
     const projectId = this.projectId();
@@ -147,12 +245,26 @@ export class UploadComponent {
       return;
     }
 
+    const ext = this.fileExt;
+    const hasMissingRequired = this.externalRefs().some(r => isRequiredRef(r, ext) && !this.refFiles().has(r));
+    if (hasMissingRequired) {
+      this.errorMessage.set('Missing required external files. Please select them before uploading.');
+      this.phase.set('error');
+      return;
+    }
+
     this.phase.set('uploading');
     this.uploadProgress.set(0);
     this.errorMessage.set('');
 
-    this.uploadSubscription = this.uploadService.upload(file, name, projectId).pipe(
-      takeUntilDestroyed(this.destroyRef),
+    const refFiles = this.refFiles().size > 0 ? [...this.refFiles().values()] : undefined;
+    let uploadFile = file;
+
+    if (ext === 'gltf' && this.refFiles().size > 0) {
+      uploadFile = await this.embedGltfRefs(file);
+    }
+
+    this.uploadSubscription = this.uploadService.upload(uploadFile, name, projectId, refFiles).pipe(
       tap((event: HttpEvent<Model3D>) => {
         if (event.type === HttpEventType.UploadProgress && event.total) {
           this.uploadProgress.set(Math.round((event.loaded / event.total) * 100));
@@ -165,13 +277,13 @@ export class UploadComponent {
         this.uploadedModel.set(model);
         this.phase.set('polling');
         this.pollAttempts.set(0);
-        return this.pollStatus(model.id);
+        return this.pollModel(model.id);
       }),
     ).subscribe({
-      next: (model: Model3D) => {
-        this.uploadedModel.set(model);
-        if (model.status === 'READY') this.phase.set('success');
-        else if (model.status === 'ERROR') {
+      next: (result: 'ready' | 'error' | 'timeout') => {
+        if (result === 'ready') {
+          this.phase.set('success');
+        } else if (result === 'error') {
           this.phase.set('error');
           this.errorMessage.set('Model processing failed.');
         } else {
@@ -179,36 +291,64 @@ export class UploadComponent {
           this.errorMessage.set('Model processing timed out. Please check back later.');
         }
       },
-      error: (err: Error) => {
+      error: (_err: Error) => {
         this.phase.set('error');
-        this.errorMessage.set(err.message || 'Upload failed. Please try again.');
+        this.errorMessage.set('Upload failed. Please try again.');
       },
     });
   }
 
-  /**
-   * Státusz polling: periodikus lekérdezés amíg READY/ERROR vagy timeout.
-   * takeWhile(inclusive: true) — az utolsó (feltételt kilépő) érték is átjön.
-   */
-  private pollStatus(modelId: string) {
-    return timer(0, POLL_INTERVAL).pipe(
-      switchMap(() => this.uploadService.getOne(modelId)),
-      takeWhile((model: Model3D) => {
-        this.pollAttempts.update(n => n + 1);
-        const done = model.status === 'READY' || model.status === 'ERROR';
-        const timedOut = this.pollAttempts() >= MAX_POLL_ATTEMPTS;
-        return !done && !timedOut;
-      }, true),
-    );
+  private pollModel(modelId: string) {
+    return new Observable<'ready' | 'error' | 'timeout'>((observer) => {
+      let attempts = 0;
+      let destroyed = false;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      let httpSub: Subscription | null = null;
+
+      const poll = () => {
+        if (destroyed) return;
+        attempts++;
+        this.pollAttempts.set(attempts);
+
+        httpSub = this.uploadService.getOne(modelId).subscribe({
+          next: (model) => {
+            if (destroyed) return;
+            this.uploadedModel.set(model);
+            if (model.status === 'READY') {
+              observer.next('ready');
+              observer.complete();
+            } else if (model.status === 'ERROR') {
+              observer.next('error');
+              observer.complete();
+            } else if (attempts >= MAX_POLL_ATTEMPTS) {
+              observer.next('timeout');
+              observer.complete();
+            } else {
+              timeoutId = setTimeout(poll, POLL_INTERVAL);
+            }
+          },
+          error: () => {
+            if (destroyed) return;
+            timeoutId = setTimeout(poll, POLL_INTERVAL);
+          },
+        });
+      };
+
+      poll();
+
+      return () => {
+        destroyed = true;
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        httpSub?.unsubscribe();
+      };
+    });
   }
 
-  /** Vissza a project detail-re. */
   navigateBack(): void {
     const pid = this.projectId();
     this.router.navigate(pid ? ['/projects', pid] : ['/projects']);
   }
 
-  /** Upload megszakítása. */
   cancelUpload(): void {
     this.uploadSubscription?.unsubscribe();
     this.uploadSubscription = null;

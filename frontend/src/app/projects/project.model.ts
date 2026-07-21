@@ -19,6 +19,7 @@ export interface Model3D {
   format: string;
   storageKey: string;
   thumbnailKey?: string;
+  refStorageKeys?: string[];
   status: ModelStatus;
   projectId: string;
   userId: string;

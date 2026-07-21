@@ -8,9 +8,11 @@ import {
   Query,
   UseGuards,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
+  Res,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { ModelsService } from './models.service.js';
 import { CreateModelDto } from './dto/create-model.dto.js';
 import { ModelQueryDto } from './dto/model-query.dto.js';
@@ -28,13 +30,13 @@ export class ModelsController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(AnyFilesInterceptor())
   upload(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
     @Body() dto: CreateModelDto,
     @CurrentUser('sub') userId: string,
   ) {
-    return this.modelsService.upload(file, dto, userId);
+    return this.modelsService.upload(files, dto, userId);
   }
 
   @Get(':id')
@@ -48,8 +50,14 @@ export class ModelsController {
   }
 
   @Get(':id/thumbnail')
-  getThumbnail(@Param('id') id: string, @CurrentUser('sub') userId: string) {
-    return this.modelsService.getThumbnail(id, userId);
+  async getThumbnail(
+    @Param('id') id: string,
+    @CurrentUser('sub') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { buffer, contentType } = await this.modelsService.getThumbnail(id, userId);
+    res.set('Content-Type', contentType);
+    res.send(buffer);
   }
 
   @Delete(':id')

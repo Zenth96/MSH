@@ -1,16 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import * as path from 'node:path';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { StorageService } from '../storage/storage.service.js';
+import { RabbitMQService } from '../rabbitmq/rabbitmq.service.js';
 import { CreateModelDto } from './dto/create-model.dto.js';
 import { ModelQueryDto } from './dto/model-query.dto.js';
 
 @Injectable()
 export class ModelsService {
+  private readonly logger = new Logger(ModelsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly rabbitmq: RabbitMQService,
   ) {}
 
   async findAll(userId: string, query?: ModelQueryDto) {
@@ -32,24 +36,70 @@ export class ModelsService {
     return model;
   }
 
-  async upload(file: Express.Multer.File, dto: CreateModelDto, userId: string) {
-    const ext = (path.extname(file.originalname).toLowerCase().replace('.', '') || 'unknown');
+  async upload(files: Express.Multer.File[], dto: CreateModelDto, userId: string) {
+    const modelExts = ['glb', 'gltf', 'obj', 'fbx'];
+    const mainFile = files.find(f => {
+      const e = path.extname(f.originalname).toLowerCase().replace('.', '');
+      return modelExts.includes(e);
+    }) || files[0];
+    const refFiles = files.filter(f => f !== mainFile);
+
+    const ext = (path.extname(mainFile.originalname).toLowerCase().replace('.', '') || 'unknown');
     const storageKey = `models/${dto.projectId}/${randomUUID()}.${ext}`;
 
-    await this.storage.upload(file.buffer, storageKey, file.mimetype);
+    await this.storage.upload(mainFile.buffer, storageKey, mainFile.mimetype);
 
-    return this.prisma.model3D.create({
+    const model = await this.prisma.model3D.create({
       data: {
         name: dto.name,
-        fileName: file.originalname,
-        fileSize: file.buffer.length,
+        fileName: mainFile.originalname,
+        fileSize: mainFile.buffer.length,
         format: ext,
         storageKey,
-        status: 'READY',
+        status: 'PROCESSING',
         projectId: dto.projectId,
         userId,
       },
     });
+
+    const refStorageKeys: string[] = [];
+    for (const rf of refFiles) {
+      const refKey = `models/${dto.projectId}/${model.id}/${rf.originalname}`;
+      try {
+        await this.storage.upload(rf.buffer, refKey, rf.mimetype);
+        refStorageKeys.push(refKey);
+        this.logger.log(`Stored ref file: ${refKey}`);
+      } catch (err) {
+        this.logger.warn(`Failed to store ref file ${rf.originalname}: ${(err as Error).message}`);
+      }
+    }
+
+    if (refStorageKeys.length) {
+      await this.prisma.model3D.update({
+        where: { id: model.id },
+        data: { refStorageKeys },
+      });
+    }
+
+    const refs = refStorageKeys.length ? refStorageKeys : undefined;
+    const jobBase = { storageKey, fileName: mainFile.originalname, format: ext, refStorageKeys: refs };
+    const needsConvert = ext !== 'glb';
+
+    if (needsConvert) {
+      const convertJob = await this.prisma.job.create({
+        data: { type: 'CONVERT', modelId: model.id },
+      });
+      this.rabbitmq.publish('model.CONVERT', { jobId: convertJob.id, modelId: model.id, jobType: 'CONVERT', ...jobBase })
+        .catch((err) => this.logger.warn(`Failed to publish convert job: ${err.message}`));
+    }
+
+    const thumbJob = await this.prisma.job.create({
+      data: { type: 'GENERATE_THUMBNAIL', modelId: model.id },
+    });
+    this.rabbitmq.publish('model.thumbnail', { jobId: thumbJob.id, modelId: model.id, jobType: 'GENERATE_THUMBNAIL', ...jobBase })
+      .catch((err) => this.logger.warn(`Failed to publish thumbnail job: ${err.message}`));
+
+    return model;
   }
 
   async download(id: string, userId: string) {
@@ -62,7 +112,7 @@ export class ModelsService {
     if (!model.thumbnailKey) {
       throw new NotFoundException(`Thumbnail for model ${id} not found`);
     }
-    return this.storage.download(model.thumbnailKey);
+    return this.storage.downloadRaw(model.thumbnailKey);
   }
 
   async remove(id: string, userId: string) {

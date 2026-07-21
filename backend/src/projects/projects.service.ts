@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { CreateProjectDto } from './dto/create-project.dto.js';
 import { UpdateProjectDto } from './dto/update-project.dto.js';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ProjectsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   async findAll(userId: string) {
     return this.prisma.project.findMany({
@@ -42,7 +48,27 @@ export class ProjectsService {
   }
 
   async remove(id: string, userId: string) {
-    await this.findOne(id, userId);
+    const project = await this.prisma.project.findFirst({
+      where: { id, userId },
+      include: { models: true },
+    });
+    if (!project) throw new NotFoundException(`Project ${id} not found`);
+
+    for (const model of project.models) {
+      try {
+        await this.storage.delete(model.storageKey);
+      } catch (err) {
+        this.logger.warn(`Failed to delete model file ${model.storageKey}: ${err}`);
+      }
+      if (model.thumbnailKey) {
+        try {
+          await this.storage.delete(model.thumbnailKey);
+        } catch (err) {
+          this.logger.warn(`Failed to delete thumbnail ${model.thumbnailKey}: ${err}`);
+        }
+      }
+    }
+
     return this.prisma.project.delete({ where: { id } });
   }
 }

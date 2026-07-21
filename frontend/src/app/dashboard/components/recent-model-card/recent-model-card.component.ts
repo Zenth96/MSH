@@ -1,6 +1,7 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBox } from '@ng-icons/lucide';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-recent-model-card',
@@ -9,9 +10,13 @@ import { lucideBox } from '@ng-icons/lucide';
   viewProviders: [provideIcons({ lucideBox })],
   template: `
     <div class="bg-card border-border group cursor-pointer rounded-xl border p-4 transition-all hover:shadow-md">
-      <!-- Thumbnail placeholder -->
-      <div class="bg-muted flex aspect-video items-center justify-center rounded-lg">
-        <ng-icon name="lucideBox" class="text-muted-foreground h-10 w-10" />
+      <!-- Thumbnail -->
+      <div class="bg-muted flex aspect-video items-center justify-center rounded-lg overflow-hidden">
+        @if (thumbnailUrl()) {
+          <img [src]="thumbnailUrl()" [alt]="name()" class="h-full w-full object-cover" />
+        } @else {
+          <ng-icon name="lucideBox" class="text-muted-foreground h-10 w-10" />
+        }
       </div>
 
       <!-- Info -->
@@ -32,12 +37,27 @@ import { lucideBox } from '@ng-icons/lucide';
     </div>
   `,
 })
-export class RecentModelCardComponent {
+export class RecentModelCardComponent implements OnInit {
+  private api = inject(ApiService);
+
   name = input.required<string>();
   projectName = input.required<string>();
   format = input.required<string>();
   fileSize = input.required<string>();
   status = input.required<'READY' | 'PROCESSING' | 'ERROR'>();
+  modelId = input<string>('');
+
+  thumbnailUrl = signal<string | null>(null);
+
+  ngOnInit(): void {
+    const id = this.modelId();
+    if (id) {
+      this.api.getThumbnailUrl(id).subscribe({
+        next: (url) => this.thumbnailUrl.set(url),
+        error: () => this.thumbnailUrl.set(null),
+      });
+    }
+  }
 
   statusClasses(): string {
     switch (this.status()) {

@@ -1,5 +1,4 @@
 <div class="mx-auto max-w-2xl space-y-8 p-6">
-  <!-- Vissza gomb -->
   <div class="flex items-center gap-3">
     <a [routerLink]="projectId() ? ['/projects', projectId()] : ['/projects']" hlmBtn size="sm" variant="ghost">
       <ng-icon name="lucideArrowLeft" class="mr-1 h-4 w-4" />
@@ -9,7 +8,6 @@
   </div>
 
   @if (phase() === 'uploading') {
-    <!-- UPLOADING: progress bar -->
     <div class="rounded-xl border bg-card p-8 text-center">
       <ng-icon name="lucideUpload" class="text-primary mx-auto mb-4 h-12 w-12" />
       <h2 class="mb-4 text-lg font-semibold">Uploading...</h2>
@@ -26,16 +24,16 @@
       </button>
     </div>
   } @else if (phase() === 'polling') {
-    <!-- POLLING: feldolgozás spinner -->
     <div class="rounded-xl border bg-card p-8 text-center">
       <hlm-spinner class="mx-auto mb-4" />
       <h2 class="mb-2 text-lg font-semibold">Processing model...</h2>
-      <p class="text-muted-foreground text-sm">
-        Optimizing and preparing your 3D model ({{ pollAttempts() }}s)
-      </p>
+      <p class="text-muted-foreground mb-4 text-sm">{{ processingElapsed() }}s elapsed</p>
+      <button (click)="cancelUpload()" hlmBtn variant="outline" size="sm">
+        <ng-icon name="lucideX" class="mr-1 h-4 w-4" />
+        Cancel
+      </button>
     </div>
   } @else if (phase() === 'success') {
-    <!-- SIKER -->
     <div class="rounded-xl border bg-card p-8 text-center">
       <div class="bg-emerald-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
         <ng-icon name="lucideCheck" class="text-emerald-600 h-8 w-8" />
@@ -54,7 +52,6 @@
       </div>
     </div>
   } @else if (phase() === 'error') {
-    <!-- HIBA -->
     <div class="rounded-xl border bg-card p-8 text-center">
       <div class="bg-red-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
         <ng-icon name="lucideAlertCircle" class="text-red-600 h-8 w-8" />
@@ -64,9 +61,7 @@
       <button (click)="clearSelectedFile()" hlmBtn>Try Again</button>
     </div>
   } @else {
-    <!-- IDLE: fájl kiválasztás -->
     @if (!selectedFile()) {
-      <!-- Drag & drop zone -->
       <div
         class="border-border hover:bg-accent/50 flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed p-12 text-center transition-colors"
         (dragover)="onDragOver($event)"
@@ -86,7 +81,6 @@
     }
 
     @if (selectedFile()) {
-      <!-- Kiválasztott fájl adatai -->
       <div class="rounded-xl border bg-card p-6">
         <div class="mb-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -110,7 +104,43 @@
           </div>
         }
 
-        <!-- Modell név -->
+        @if (externalRefs().length) {
+          <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
+            <p class="mb-2 flex items-center gap-1.5 font-medium text-amber-800">
+              <ng-icon name="lucidePaperclip" class="h-4 w-4" />
+              This {{ fileExt.toUpperCase() }} references external files:
+            </p>
+            <ul class="mb-3 space-y-1">
+              @for (ref of externalRefs(); track ref) {
+                <li class="flex items-center gap-2 text-xs">
+                  @if (refFiles().has(ref)) {
+                    <span class="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700">
+                      <ng-icon name="lucideCheck" class="h-3 w-3" />
+                      {{ ref }}
+                    </span>
+                    <button (click)="removeRefFile(ref)" class="text-muted-foreground hover:text-destructive ml-1">✕</button>
+                  } @else {
+                    <span [class.text-amber-700]="isRequiredRef(ref)" [class.text-muted-foreground]="!isRequiredRef(ref)">
+                      {{ isRequiredRef(ref) ? '⚠ ' : '' }}{{ ref }}
+                    </span>
+                  }
+                </li>
+              }
+            </ul>
+            <label class="flex cursor-pointer items-center gap-2 text-xs font-medium text-amber-700 hover:text-amber-800">
+              <ng-icon name="lucideUpload" class="h-3.5 w-3.5" />
+              Select referenced files
+              <input #refInput type="file" multiple class="hidden" (change)="onRefFilesChange($event)" />
+            </label>
+            <p class="mt-1 text-xs text-amber-600/70">
+              @if (fileExt === 'obj') { MTL files are required. }
+              @else if (fileExt === 'gltf') { .bin files are required. }
+              @else { All files are optional. }
+              Files are matched by filename.
+            </p>
+          </div>
+        }
+
         <div class="mb-4">
           <label class="mb-1.5 block text-sm font-medium">Model Name</label>
           <input
@@ -122,7 +152,6 @@
           />
         </div>
 
-        <!-- Upload gomb -->
         <button
           (click)="startUpload()"
           hlmBtn
