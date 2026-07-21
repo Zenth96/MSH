@@ -30,7 +30,7 @@
               <p hlmAlertDialogDescription>
                 Are you sure you want to delete "{{ project()!.name }}"?
                 This will permanently remove it and all of its models.
-                This action cannot be undone.
+                This action cannot be reversed.
               </p>
             </hlm-alert-dialog-header>
             <hlm-alert-dialog-footer>
@@ -69,9 +69,19 @@
           @if (project()!.models && project()!.models!.length > 0) {
             <div class="space-y-3">
               @for (model of project()!.models; track model.id) {
-                <div class="flex items-center justify-between rounded-lg border p-4">
+                <a [routerLink]="['/viewer', model.id]" class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50 cursor-pointer">
                   <div class="flex items-center gap-3">
-                    <ng-icon name="lucideBox" class="h-5 w-5 text-muted-foreground" />
+                    @if (model.thumbnailKey && getThumbnailUrl(model.id)) {
+                      <img [src]="getThumbnailUrl(model.id)" class="h-10 w-10 rounded-lg object-cover" />
+                    } @else if (model.status === 'PROCESSING') {
+                      <div class="bg-muted flex h-10 w-10 items-center justify-center rounded-lg">
+                        <ng-icon name="lucideLoader2" class="h-5 w-5 text-muted-foreground animate-spin" />
+                      </div>
+                    } @else {
+                      <div class="bg-muted flex h-10 w-10 items-center justify-center rounded-lg">
+                        <ng-icon name="lucideBox" class="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    }
                     <div>
                       <p class="font-medium">{{ model.name }}</p>
                       <p class="text-sm text-muted-foreground">
@@ -83,11 +93,9 @@
                     <hlm-badge [variant]="modelStatusVariantFn(model.status)">
                       {{ model.status }}
                     </hlm-badge>
-                    <a [routerLink]="['/viewer', model.id]" hlmBtn size="sm" variant="ghost">
-                      <ng-icon name="lucideExternalLink" class="h-4 w-4" />
-                    </a>
+                    <ng-icon name="lucideExternalLink" class="h-4 w-4 text-muted-foreground" />
                   </div>
-                </div>
+                </a>
               }
             </div>
           } @else {

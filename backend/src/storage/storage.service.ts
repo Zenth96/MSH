@@ -55,6 +55,32 @@ export class StorageService {
   }
 
   async download(key: string, expiresIn = 3600): Promise<string> {
+    return this.getSignedUrl(key, expiresIn);
+  }
+
+  async downloadRaw(key: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+
+    const response = await this.client.send(command);
+
+    const chunks: Uint8Array[] = [];
+    const stream = response.Body;
+    if (!stream) throw new Error(`Empty response body for key: ${key}`);
+
+    for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+
+    return {
+      buffer: Buffer.concat(chunks),
+      contentType: response.ContentType ?? 'application/octet-stream',
+    };
+  }
+
+  async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: key,

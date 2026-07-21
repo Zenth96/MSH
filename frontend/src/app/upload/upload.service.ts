@@ -20,9 +20,12 @@ export class UploadService {
    *   1. HttpUploadProgressEvent (reportProgress)
    *   2. HttpResponse<Model3D> (backend válasza)
    */
-  upload(file: File, name: string, projectId: string): Observable<HttpEvent<Model3D>> {
+  upload(file: File, name: string, projectId: string, refFiles?: File[]): Observable<HttpEvent<Model3D>> {
     const formData = new FormData();
     formData.append('file', file);
+    if (refFiles) for (const rf of refFiles) {
+      formData.append('file', rf);
+    }
     formData.append('name', name);
     formData.append('projectId', projectId);
     return this.api.uploadWithProgress<Model3D>('/models/upload', formData);

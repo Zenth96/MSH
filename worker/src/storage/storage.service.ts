@@ -3,6 +3,7 @@ import {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
+  HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 
 const MAX_RETRIES = 3;
@@ -85,5 +86,14 @@ export class StorageService {
       await this.client.send(command);
       this.logger.log(`Uploaded: ${key}`);
     }, `S3 upload(${key})`);
+  }
+
+  async keyExists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

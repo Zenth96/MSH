@@ -46,16 +46,19 @@ export class ProcessingService {
 
       await handler.handle(message);
 
-      await this.prisma.$transaction([
-        this.prisma.job.update({
-          where: { id: jobId },
-          data: { status: 'DONE' },
-        }),
-        this.prisma.model3D.update({
-          where: { id: modelId },
-          data: { status: 'READY' },
-        }),
-      ]);
+      await this.prisma.job.update({
+        where: { id: jobId },
+        data: { status: 'DONE' },
+      });
+
+      const pendingJobs = await this.prisma.job.count({
+        where: { modelId, status: { in: ['PENDING', 'RUNNING'] } },
+      });
+
+      await this.prisma.model3D.update({
+        where: { id: modelId },
+        data: { status: pendingJobs === 0 ? 'READY' : 'PROCESSING' },
+      });
 
       this.logger.log(`Job ${jobId} completed successfully`);
     } catch (error) {
@@ -67,19 +70,19 @@ export class ProcessingService {
 
   private async failJob(jobId: string, modelId: string, errorMessage: string): Promise<void> {
     try {
-      await this.prisma.$transaction([
-        this.prisma.job.update({
-          where: { id: jobId },
-          data: {
-            status: 'FAILED',
-            errorMessage,
-          },
-        }),
-        this.prisma.model3D.update({
-          where: { id: modelId },
-          data: { status: 'ERROR' },
-        }),
-      ]);
+      await this.prisma.job.update({
+        where: { id: jobId },
+        data: { status: 'FAILED', errorMessage },
+      });
+
+      const pendingJobs = await this.prisma.job.count({
+        where: { modelId, status: { in: ['PENDING', 'RUNNING'] } },
+      });
+
+      await this.prisma.model3D.update({
+        where: { id: modelId },
+        data: { status: pendingJobs === 0 ? 'ERROR' : 'PROCESSING' },
+      });
     } catch (error) {
       this.logger.error(`Failed to update job ${jobId} status: ${error}`);
     }

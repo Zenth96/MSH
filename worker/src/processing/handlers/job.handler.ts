@@ -5,6 +5,7 @@ export interface JobMessage {
   storageKey: string;
   fileName: string;
   format: string;
+  refStorageKeys?: string[];
 }
 
 export interface JobHandler {
