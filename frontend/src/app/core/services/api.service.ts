@@ -40,4 +40,12 @@ export class ApiService {
       map((blob) => URL.createObjectURL(blob)),
     );
   }
+
+  getProjects(): Observable<any[]> {
+    return this.get<any[]>('/projects');
+  }
+
+  getAllModels(): Observable<any[]> {
+    return this.get<any[]>('/models');
+  }
 }

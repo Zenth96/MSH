@@ -14,7 +14,7 @@
   }
 
   @if (!loading() && !error() && users.length > 0) {
-    <div hlmTableContainer>
+    <div hlmTableContainer class="rounded-xl border">
       <table hlmTable>
         <thead hlmTHead>
           <tr hlmTr>
@@ -26,8 +26,8 @@
           </tr>
         </thead>
         <tbody hlmTBody>
-          @for (user of users; track user.id) {
-            <tr hlmTr>
+          @for (user of users; track user.id; let i = $index) {
+            <tr hlmTr [class.bg-muted/30]="i % 2 === 1">
               <td hlmTd class="font-medium">{{ user.name || '—' }}</td>
               <td hlmTd>{{ user.email }}</td>
               <td hlmTd>
