@@ -2,6 +2,10 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
   {
+    path: '', // landing page
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'auth/*',
     renderMode: RenderMode.Client,
   },
@@ -10,27 +14,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
-    path: '',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: 'dashboard',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: 'projects',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: 'models',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: 'admin/dashboard',
-    renderMode: RenderMode.Client,
-  },
-  {
-    path: 'admin/*',
+    path: 'app/*',
     renderMode: RenderMode.Client,
   },
   {

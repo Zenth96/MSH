@@ -45,7 +45,7 @@ done();`;
 <head>
 <style>
 *{margin:0;box-sizing:border-box}
-html,body{width:256px;height:256px;overflow:hidden;background:#f0f0f0}
+html,body{width:512px;height:512px;overflow:hidden;background:#f0f0f0}
 </style>
 </head>
 <body>
@@ -68,8 +68,8 @@ const Mod=await import('${loaderPath}');
 const ${loaderName}=Mod.${loaderName};
 
 const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
-r.setSize(256,256);
-r.setPixelRatio(1);
+r.setSize(512,512);
+r.setPixelRatio(2);
 document.body.appendChild(r.domElement);
 
 const s=new THREE.Scene();

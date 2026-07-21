@@ -17,6 +17,7 @@ export class ProjectsService {
     return this.prisma.project.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      include: { _count: { select: { models: true } } },
     });
   }
 

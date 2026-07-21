@@ -4,6 +4,11 @@ import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
+    path: '',
+    loadComponent: () =>
+      import('./landing/landing.component').then((m) => m.LandingComponent),
+  },
+  {
     path: 'auth',
     loadChildren: () => import('./auth/auth.module').then((m) => m.AuthModule),
   },
@@ -15,7 +20,7 @@ export const routes: Routes = [
       ),
   },
   {
-    path: '',
+    path: 'app',
     loadComponent: () =>
       import('./shared/layout/app-layout/app-layout.component').then(
         (m) => m.AppLayoutComponent,
@@ -75,5 +80,11 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./shared/not-found/not-found.component').then(
+        (m) => m.NotFoundComponent,
+      ),
+  },
 ];

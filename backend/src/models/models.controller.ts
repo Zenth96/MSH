@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
@@ -15,6 +16,7 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ModelsService } from './models.service.js';
 import { CreateModelDto } from './dto/create-model.dto.js';
+import { UpdateModelDto } from './dto/update-model.dto.js';
 import { ModelQueryDto } from './dto/model-query.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -58,6 +60,15 @@ export class ModelsController {
     const { buffer, contentType } = await this.modelsService.getThumbnail(id, userId);
     res.set('Content-Type', contentType);
     res.send(buffer);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateModelDto,
+    @CurrentUser('sub') userId: string,
+  ) {
+    return this.modelsService.update(id, dto, userId);
   }
 
   @Delete(':id')

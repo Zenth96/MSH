@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService, User } from '../../../core/services/auth.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmSeparator } from '@spartan-ng/helm/separator';
@@ -44,6 +44,7 @@ import {
 })
 export class SidebarComponent implements OnInit {
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   collapsed = signal(false);
   currentUser = signal<User | null>(null);
@@ -62,6 +63,6 @@ export class SidebarComponent implements OnInit {
 
   logout(): void {
     this.auth.logout();
-    window.location.href = '/auth/login';
+    this.router.navigate(['/auth/login']);
   }
 }

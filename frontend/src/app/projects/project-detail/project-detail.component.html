@@ -1,6 +1,7 @@
 <div class="p-6 space-y-6">
+  <!-- Header -->
   <div class="flex items-center gap-4">
-    <a routerLink="/projects" hlmBtn size="sm" variant="ghost">
+    <a routerLink="/app/projects" hlmBtn size="sm" variant="ghost">
       <ng-icon name="lucideArrowLeft" class="h-4 w-4" />
     </a>
     <div class="flex-1 min-w-0">
@@ -15,30 +16,14 @@
     </div>
     @if (project()) {
       <div class="flex items-center gap-2">
-        <a [routerLink]="['/projects', project()!.id, 'edit']" hlmBtn size="sm" variant="outline">
+        <a [routerLink]="['/app/projects', project()!.id, 'edit']" hlmBtn size="sm" variant="outline">
           <ng-icon name="lucidePencil" class="mr-2 h-4 w-4" />
           Edit
         </a>
-        <hlm-alert-dialog (closed)="onDialogClosed($event)">
-          <button hlmAlertDialogTrigger hlmBtn size="sm" variant="destructive">
-            <ng-icon name="lucideTrash2" class="mr-2 h-4 w-4" />
-            Delete
-          </button>
-          <hlm-alert-dialog-content *hlmAlertDialogPortal="let ctx">
-            <hlm-alert-dialog-header>
-              <h2 hlmAlertDialogTitle>Delete project</h2>
-              <p hlmAlertDialogDescription>
-                Are you sure you want to delete "{{ project()!.name }}"?
-                This will permanently remove it and all of its models.
-                This action cannot be reversed.
-              </p>
-            </hlm-alert-dialog-header>
-            <hlm-alert-dialog-footer>
-              <button hlmAlertDialogCancel>Cancel</button>
-              <button hlmAlertDialogAction variant="destructive" (click)="ctx.close('confirm')">Delete</button>
-            </hlm-alert-dialog-footer>
-          </hlm-alert-dialog-content>
-        </hlm-alert-dialog>
+        <button (click)="openProjectDeleteDialog()" hlmBtn size="sm" variant="destructive">
+          <ng-icon name="lucideTrash2" class="mr-2 h-4 w-4" />
+          Delete
+        </button>
       </div>
     }
   </div>
@@ -58,55 +43,275 @@
   @if (!loading() && !error() && project()) {
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div class="lg:col-span-2 space-y-6">
-        <div class="rounded-xl border bg-card p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold">Models</h2>
-            <a [routerLink]="['/upload']" [queryParams]="{ projectId: project()!.id }" hlmBtn size="sm">
-              <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" /> Upload Model
+        <!-- Toolbar -->
+        <div class="rounded-xl border bg-card p-4 space-y-3">
+          <div class="flex items-center gap-3">
+            <!-- View toggle -->
+            <div class="flex items-center rounded-lg border bg-muted/30 p-0.5">
+              <button
+                (click)="viewMode.set('list')"
+                class="rounded-md p-1.5 transition-colors"
+                [class.bg-background]="viewMode() === 'list'"
+                [class.shadow-sm]="viewMode() === 'list'"
+                title="List view"
+              >
+                <ng-icon name="lucideList" class="h-4 w-4" />
+              </button>
+              <button
+                (click)="viewMode.set('grid-sm')"
+                class="rounded-md p-1.5 transition-colors"
+                [class.bg-background]="viewMode() === 'grid-sm'"
+                [class.shadow-sm]="viewMode() === 'grid-sm'"
+                title="Small grid"
+              >
+                <ng-icon name="lucideGrid3X3" class="h-4 w-4" />
+              </button>
+              <button
+                (click)="viewMode.set('grid-lg')"
+                class="rounded-md p-1.5 transition-colors"
+                [class.bg-background]="viewMode() === 'grid-lg'"
+                [class.shadow-sm]="viewMode() === 'grid-lg'"
+                title="Large grid"
+              >
+                <ng-icon name="lucideLayoutGrid" class="h-4 w-4" />
+              </button>
+            </div>
+
+            <!-- Search -->
+            <div class="relative flex-1 max-w-sm">
+              <ng-icon name="lucideSearch" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <input
+                [ngModel]="searchQuery()"
+                (ngModelChange)="searchQuery.set($event)"
+                placeholder="Search models..."
+                class="w-full rounded-lg border bg-background pl-9 pr-9 py-1.5 text-sm outline-none ring-primary/20 transition-shadow focus:ring-2"
+              />
+              @if (searchQuery()) {
+                <button (click)="searchQuery.set('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  <ng-icon name="lucideX" class="h-4 w-4" />
+                </button>
+              }
+            </div>
+
+            <div class="flex-1"></div>
+
+            <a [routerLink]="['/app/upload']" [queryParams]="{ projectId: project()!.id }" hlmBtn size="sm">
+              <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" /> Upload
             </a>
           </div>
 
-          @if (project()!.models && project()!.models!.length > 0) {
-            <div class="space-y-3">
-              @for (model of project()!.models; track model.id) {
-                <a [routerLink]="['/viewer', model.id]" class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50 cursor-pointer">
-                  <div class="flex items-center gap-3">
-                    @if (model.thumbnailKey && getThumbnailUrl(model.id)) {
-                      <img [src]="getThumbnailUrl(model.id)" class="h-10 w-10 rounded-lg object-cover" />
-                    } @else if (model.status === 'PROCESSING') {
-                      <div class="bg-muted flex h-10 w-10 items-center justify-center rounded-lg">
-                        <ng-icon name="lucideLoader2" class="h-5 w-5 text-muted-foreground animate-spin" />
+          <!-- Status filter -->
+          <div class="flex items-center gap-2">
+            <ng-icon name="lucideSlidersHorizontal" class="h-4 w-4 text-muted-foreground shrink-0" />
+            @for (s of statuses; track s.value) {
+              <button
+                (click)="toggleStatusFilter(s.value)"
+                hlmBtn
+                size="xs"
+                [variant]="statusFilter().has(s.value) ? 'default' : 'outline'"
+              >
+                {{ s.label }}
+              </button>
+            }
+            <span class="mx-1.5 h-4 w-px bg-border"></span>
+            @for (f of formats; track f.value) {
+              <button
+                (click)="toggleFormatFilter(f.value)"
+                hlmBtn
+                size="xs"
+                [variant]="formatFilter().has(f.value) ? 'default' : 'outline'"
+              >
+                {{ f.label }}
+              </button>
+            }
+            @if (hasActiveFilter()) {
+              <button (click)="clearAllFilters()" hlmBtn size="xs" variant="ghost" class="text-muted-foreground">
+                <ng-icon name="lucideX" class="mr-1 h-3 w-3" />
+                Clear
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Bulk action bar -->
+        @if (selectedCount() > 0) {
+          <div class="rounded-xl border bg-primary/5 px-4 py-3 flex items-center gap-3">
+            <button (click)="clearSelection()" hlmBtn size="sm" variant="ghost" class="h-8 w-8 p-0">
+              <ng-icon name="lucideX" class="h-4 w-4" />
+            </button>
+            <span class="text-sm font-medium">{{ selectedCount() }} selected</span>
+            <div class="flex-1"></div>
+            <button (click)="openMoveDialog()" hlmBtn size="sm" variant="outline" [disabled]="deleting()">
+              <ng-icon name="lucideMove" class="mr-2 h-4 w-4" /> Move
+            </button>
+            <button (click)="deleteSelectedModels()" hlmBtn size="sm" variant="destructive" [disabled]="deleting()">
+              <ng-icon name="lucideTrash2" class="mr-2 h-4 w-4" /> Delete
+            </button>
+          </div>
+        }
+
+        <!-- Models grid / list -->
+        @if (filteredModels().length > 0) {
+          @if (viewMode() === 'list') {
+            <div class="space-y-2">
+              @for (model of filteredModels(); track model.id) {
+                <div class="flex items-center justify-between rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5">
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <button
+                      (click)="toggleSelect(model.id)"
+                      class="flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors"
+                      [class.border-primary]="selectedIds().has(model.id)"
+                      [class.bg-primary]="selectedIds().has(model.id)"
+                      [class.text-primary-foreground]="selectedIds().has(model.id)"
+                    >
+                      @if (selectedIds().has(model.id)) {
+                        <ng-icon name="lucideCheck" class="h-3 w-3" />
+                      }
+                    </button>
+                    <a [routerLink]="['/viewer', model.id]" class="flex items-center gap-3 flex-1 min-w-0">
+                      @if (model.thumbnailKey && getThumbnailUrl(model.id)) {
+                        <img [src]="getThumbnailUrl(model.id)" class="h-12 w-12 rounded-lg object-cover ring-1 ring-border shrink-0" />
+                      } @else if (model.status === 'PROCESSING') {
+                        <div class="bg-muted flex h-12 w-12 items-center justify-center rounded-lg ring-1 ring-border shrink-0">
+                          <ng-icon name="lucideLoader2" class="h-5 w-5 text-muted-foreground animate-spin" />
+                        </div>
+                      } @else {
+                        <div class="bg-muted flex h-12 w-12 items-center justify-center rounded-lg ring-1 ring-border shrink-0">
+                          <ng-icon name="lucideBox" class="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      }
+                      <div class="min-w-0">
+                        <p class="font-medium group-hover:text-primary transition-colors truncate">{{ model.name }}</p>
+                        <p class="text-sm text-muted-foreground">
+                          {{ model.format | uppercase }} · {{ formatSize(model.fileSize) }}
+                        </p>
                       </div>
-                    } @else {
-                      <div class="bg-muted flex h-10 w-10 items-center justify-center rounded-lg">
-                        <ng-icon name="lucideBox" class="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    }
-                    <div>
-                      <p class="font-medium">{{ model.name }}</p>
-                      <p class="text-sm text-muted-foreground">
-                        {{ model.format | uppercase }} · {{ formatSize(model.fileSize) }}
-                      </p>
-                    </div>
+                    </a>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 shrink-0">
                     <hlm-badge [variant]="modelStatusVariantFn(model.status)">
                       {{ model.status }}
                     </hlm-badge>
-                    <ng-icon name="lucideExternalLink" class="h-4 w-4 text-muted-foreground" />
+                    <button
+                      (click)="moveSingleModel(model)"
+                      hlmBtn size="sm" variant="ghost" class="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                      title="Move to project"
+                    >
+                      <ng-icon name="lucideMove" class="h-4 w-4" />
+                    </button>
+                    <button
+                      (click)="confirmDeleteModel(model)"
+                      hlmBtn size="sm" variant="ghost" class="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      title="Delete model"
+                    >
+                      <ng-icon name="lucideTrash2" class="h-4 w-4" />
+                    </button>
                   </div>
-                </a>
+                </div>
               }
             </div>
           } @else {
-            <div class="flex flex-col items-center justify-center py-12 text-center">
-              <ng-icon name="lucideBox" class="h-10 w-10 text-muted-foreground mb-3" />
-              <p class="text-sm text-muted-foreground">No models in this project yet.</p>
+            <div
+              class="grid gap-4"
+              [class.grid-cols-1]="viewMode() === 'grid-lg'"
+              [class.sm:grid-cols-2]="viewMode() === 'grid-lg'"
+              [class.grid-cols-2]="viewMode() === 'grid-sm'"
+              [class.sm:grid-cols-3]="viewMode() === 'grid-sm'"
+            >
+              @for (model of filteredModels(); track model.id) {
+                <div class="group relative rounded-xl border bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 overflow-hidden">
+                  <a [routerLink]="['/viewer', model.id]" class="block">
+                    @if (model.thumbnailKey && getThumbnailUrl(model.id)) {
+                      <div class="aspect-video overflow-hidden">
+                        <img [src]="getThumbnailUrl(model.id)" class="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      </div>
+                    } @else if (model.status === 'PROCESSING') {
+                      <div class="aspect-video bg-muted flex items-center justify-center">
+                        <ng-icon name="lucideLoader2" class="h-8 w-8 text-muted-foreground animate-spin" />
+                      </div>
+                    } @else {
+                      <div class="aspect-video bg-muted flex items-center justify-center">
+                        <ng-icon name="lucideBox" class="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    }
+                  </a>
+                  <div class="p-3">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                          <button
+                            (click)="toggleSelect(model.id)"
+                            class="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors"
+                            [class.border-primary]="selectedIds().has(model.id)"
+                            [class.bg-primary]="selectedIds().has(model.id)"
+                            [class.text-primary-foreground]="selectedIds().has(model.id)"
+                          >
+                            @if (selectedIds().has(model.id)) {
+                              <ng-icon name="lucideCheck" class="h-2.5 w-2.5" />
+                            }
+                          </button>
+                          <a [routerLink]="['/viewer', model.id]" class="font-medium text-sm truncate group-hover:text-primary transition-colors">{{ model.name }}</a>
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-0.5 ml-6">
+                          {{ model.format | uppercase }} · {{ formatSize(model.fileSize) }}
+                        </p>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <button
+                          (click)="moveSingleModel(model)"
+                          class="rounded-md p-1 text-muted-foreground hover:text-primary transition-colors"
+                          title="Move to project"
+                        >
+                          <ng-icon name="lucideMove" class="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          (click)="confirmDeleteModel(model)"
+                          class="rounded-md p-1 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Delete model"
+                        >
+                          <ng-icon name="lucideTrash2" class="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div class="mt-2">
+                      <hlm-badge [variant]="modelStatusVariantFn(model.status)" class="text-[10px]">
+                        {{ model.status }}
+                      </hlm-badge>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
           }
-        </div>
+        } @else {
+          <div class="rounded-xl border bg-card p-6">
+            @if (project()!.models && project()!.models!.length > 0) {
+              <div class="flex flex-col items-center justify-center py-10 text-center">
+                <div class="bg-muted flex h-12 w-12 items-center justify-center rounded-full mb-3">
+                  <ng-icon name="lucideSearch" class="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p class="text-sm font-medium">No models match your filters</p>
+                <button (click)="clearAllFilters()" hlmBtn size="sm" variant="link" class="mt-1">
+                  Clear all filters
+                </button>
+              </div>
+            } @else {
+              <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="bg-muted flex h-14 w-14 items-center justify-center rounded-full mb-3">
+                  <ng-icon name="lucideBox" class="h-7 w-7 text-muted-foreground" />
+                </div>
+                <p class="text-sm font-medium">No models yet</p>
+                <p class="text-muted-foreground text-xs mt-1">Upload your first 3D model to get started.</p>
+                <a [routerLink]="['/app/upload']" [queryParams]="{ projectId: project()!.id }" hlmBtn size="sm" class="mt-4">
+                  <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" /> Upload Model
+                </a>
+              </div>
+            }
+          </div>
+        }
       </div>
 
+      <!-- Sidebar -->
       <div class="space-y-6">
         <div class="rounded-xl border bg-card p-6">
           <h3 class="text-sm font-semibold text-muted-foreground mb-4">Project Info</h3>
@@ -133,6 +338,79 @@
               <span>{{ project()!.updatedAt | date:'mediumDate' }}</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete model confirmation dialog -->
+  @if (deleteTarget()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" (click)="clearDeleteTarget()">
+      <div class="rounded-xl border bg-card p-6 max-w-sm w-full mx-4 shadow-2xl" (click)="$event.stopPropagation()">
+        <h2 class="text-lg font-semibold">Delete model</h2>
+        <p class="text-sm text-muted-foreground mt-2">
+          Are you sure you want to delete "{{ deleteTarget()!.name }}"?
+          This action cannot be reversed.
+        </p>
+        <div class="flex justify-end gap-2 mt-6">
+          <button (click)="clearDeleteTarget()" hlmBtn size="sm" variant="outline">Cancel</button>
+          <button (click)="deleteModel(deleteTarget()!.id)" hlmBtn size="sm" variant="destructive" [disabled]="deleting()">
+            @if (deleting()) {
+              <hlm-spinner class="mr-2 h-4 w-4" />
+            }
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Move to project dialog -->
+  @if (showMoveDialog()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" (click)="closeMoveDialog()">
+      <div class="rounded-xl border bg-card p-6 max-w-sm w-full mx-4 shadow-2xl" (click)="$event.stopPropagation()">
+        <h2 class="text-lg font-semibold">Move {{ selectedCount() }} model(s)</h2>
+        <p class="text-sm text-muted-foreground mt-1">Select a destination project:</p>
+        <div class="mt-4 space-y-1 max-h-60 overflow-y-auto">
+          @for (target of availableTargets(); track target.id) {
+            <button
+              (click)="moveSelectedModels(target.id)"
+              [disabled]="deleting()"
+              class="w-full flex items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted disabled:opacity-50"
+            >
+              <ng-icon name="lucideFolderOpen" class="h-5 w-5 text-muted-foreground shrink-0" />
+              <div class="min-w-0">
+                <p class="text-sm font-medium truncate">{{ target.name }}</p>
+                <p class="text-xs text-muted-foreground">{{ target._count?.models ?? 0 }} models</p>
+              </div>
+            </button>
+          }
+          @if (availableTargets().length === 0) {
+            <p class="text-sm text-muted-foreground py-4 text-center">No other projects available</p>
+          }
+        </div>
+        <div class="flex justify-end mt-4">
+          <button (click)="closeMoveDialog()" hlmBtn size="sm" variant="outline">Cancel</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete project dialog -->
+  @if (showProjectDeleteDialog()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" (click)="cancelProjectDelete()">
+      <div class="rounded-xl border bg-card p-6 max-w-sm w-full mx-4 shadow-2xl" (click)="$event.stopPropagation()">
+        <h2 class="text-lg font-semibold">Delete project</h2>
+        <p class="text-sm text-muted-foreground mt-2">
+          Are you sure you want to delete "{{ project()!.name }}"?
+          This will permanently remove it and all of its models.
+          This action cannot be reversed.
+        </p>
+        <div class="flex justify-end gap-2 mt-6">
+          <button (click)="cancelProjectDelete()" hlmBtn size="sm" variant="outline">Cancel</button>
+          <button (click)="deleteProject()" hlmBtn size="sm" variant="destructive">
+            Delete
+          </button>
         </div>
       </div>
     </div>

@@ -4,42 +4,64 @@
     <p class="text-muted-foreground mt-1">Here's an overview of your 3D assets</p>
   </div>
 
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    @for (stat of stats(); track stat.label) {
-      <app-stats-card
-        [label]="stat.label"
-        [value]="stat.value"
-        [icon]="stat.icon"
-        [color]="stat.color"
-      />
-    }
-  </div>
-
-  <div>
-    <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-lg font-semibold">Recent Models</h2>
-      <a routerLink="/models" class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium transition-colors">
-        See all
-        <ng-icon name="lucideArrowRight" class="h-4 w-4" />
-      </a>
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <hlm-spinner />
     </div>
-
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      @for (model of recentModels(); track model.id) {
-        <app-recent-model-card
-          [name]="model.name"
-          [projectName]="model.projectName"
-          [format]="model.format"
-          [fileSize]="model.fileSize"
-          [status]="model.status"
-          [modelId]="model.id"
+  } @else if (error()) {
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="bg-destructive/10 flex h-14 w-14 items-center justify-center rounded-full mb-4">
+        <ng-icon name="lucideAlertCircle" class="text-destructive h-7 w-7" />
+      </div>
+      <p class="text-sm font-medium text-destructive">{{ error() }}</p>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (stat of stats(); track stat.label) {
+        <app-stats-card
+          [label]="stat.label"
+          [value]="stat.value"
+          [icon]="stat.icon"
+          [color]="stat.color"
         />
       }
     </div>
-  </div>
 
-  <div>
-    <h2 class="text-muted-foreground mb-4 text-lg font-semibold">Quick Actions</h2>
-    <app-upload-button />
-  </div>
+    <div>
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Recent Models</h2>
+        <a routerLink="/app/models" class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium transition-colors">
+          See all
+          <ng-icon name="lucideArrowRight" class="h-4 w-4" />
+        </a>
+      </div>
+
+      @if (recentModels().length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+          <div class="bg-muted flex h-14 w-14 items-center justify-center rounded-full mb-3">
+            <ng-icon name="lucideBox" class="text-muted-foreground h-7 w-7" />
+          </div>
+          <p class="text-muted-foreground text-sm">No models yet.</p>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          @for (model of recentModels(); track model.id) {
+            <app-recent-model-card
+              [name]="model.name"
+              [projectName]="model.projectName"
+              [format]="model.format"
+              [fileSize]="model.fileSize"
+              [status]="model.status"
+              [modelId]="model.id"
+            />
+          }
+        </div>
+      }
+    </div>
+
+    <div>
+      <h2 class="text-muted-foreground mb-4 text-lg font-semibold">Quick Actions</h2>
+      <app-upload-button />
+    </div>
+  }
 </div>

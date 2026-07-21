@@ -1,11 +1,14 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideEye, lucideEyeOff, lucideLogIn } from '@ng-icons/lucide';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInput } from '@spartan-ng/helm/input';
 import { HlmLabel } from '@spartan-ng/helm/label';
+import { HlmSpinner } from '@spartan-ng/helm/spinner';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -14,12 +17,15 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [
     ReactiveFormsModule,
     RouterLink,
+    NgIcon,
     HlmCardImports,
     HlmFieldImports,
     HlmLabel,
     HlmInput,
     HlmButton,
+    HlmSpinner,
   ],
+  viewProviders: [provideIcons({ lucideEye, lucideEyeOff, lucideLogIn })],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
@@ -28,6 +34,8 @@ export class LoginComponent {
   private router = inject(Router);
 
   error = '';
+  loading = signal(false);
+  showPassword = signal(false);
 
   form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -37,9 +45,14 @@ export class LoginComponent {
   submit(): void {
     if (this.form.invalid) return;
     this.error = '';
+    this.loading.set(true);
     this.auth.login(this.form.value.email!, this.form.value.password!).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/app/dashboard']);
+      },
       error: (err) => {
+        this.loading.set(false);
         this.error = err.error?.message || 'Login failed';
       },
     });

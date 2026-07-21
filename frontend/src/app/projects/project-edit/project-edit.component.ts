@@ -77,7 +77,7 @@ export class ProjectEditComponent implements OnInit {
       description: this.description().trim() || undefined,
       status: this.status(),
     }).subscribe({
-      next: () => this.router.navigate(['/projects', this.projectId]),
+      next: () => this.router.navigate(['/app/projects', this.projectId]),
       error: (err) => {
         this.error.set(extractErrorMessage(err, 'Failed to update project'));
         this.saving.set(false);

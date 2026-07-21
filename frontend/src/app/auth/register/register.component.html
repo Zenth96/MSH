@@ -1,8 +1,13 @@
-<div class="flex min-h-dvh items-center justify-center">
-  <div hlmCard class="w-full max-w-md">
-    <div hlmCardHeader>
-      <h3 hlmCardTitle>Register</h3>
-      <p hlmCardDescription>Create a new account</p>
+<div class="flex min-h-dvh items-center justify-center bg-background">
+  <div hlmCard class="w-full max-w-sm">
+    <div hlmCardHeader class="items-center pb-2">
+      <img
+        src="logo.png"
+        alt="MSH"
+        class="mb-2 h-10 w-10 object-contain"
+      />
+      <h3 hlmCardTitle class="text-xl">Create account</h3>
+      <p hlmCardDescription>Join MSH to manage your 3D models</p>
     </div>
     <div hlmCardContent>
       <form [formGroup]="form" (ngSubmit)="submit()">
@@ -37,10 +42,31 @@
           }
         </hlm-field>
 
-        <hlm-field class="mb-6" orientation="vertical">
+        <hlm-field class="mb-4" orientation="vertical">
           <label hlmLabel>Password</label>
           <hlm-field-content>
-            <input hlmInput id="password" type="password" formControlName="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+            <div class="relative w-full">
+              <input
+                hlmInput
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+                class="w-full pr-10"
+              />
+              <button
+                type="button"
+                (click)="showPassword.update(v => !v)"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabindex="-1"
+              >
+                @if (showPassword()) {
+                  <ng-icon name="lucideEyeOff" class="h-4 w-4" />
+                } @else {
+                  <ng-icon name="lucideEye" class="h-4 w-4" />
+                }
+              </button>
+            </div>
           </hlm-field-content>
           @if (form.controls.password.invalid && form.controls.password.touched) {
             <hlm-field-error>
@@ -50,15 +76,57 @@
           }
         </hlm-field>
 
-        <button hlmBtn type="submit" class="w-full" [disabled]="form.invalid">
-          Register
+        <hlm-field class="mb-6" orientation="vertical">
+          <label hlmLabel>Confirm Password</label>
+          <hlm-field-content>
+            <div class="relative w-full">
+              <input
+                hlmInput
+                id="confirmPassword"
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+                class="w-full pr-10"
+              />
+              <button
+                type="button"
+                (click)="showConfirmPassword.update(v => !v)"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabindex="-1"
+              >
+                @if (showConfirmPassword()) {
+                  <ng-icon name="lucideEyeOff" class="h-4 w-4" />
+                } @else {
+                  <ng-icon name="lucideEye" class="h-4 w-4" />
+                }
+              </button>
+            </div>
+          </hlm-field-content>
+          @if (form.controls.confirmPassword.invalid && form.controls.confirmPassword.touched) {
+            <hlm-field-error>
+              @if (form.controls.confirmPassword.errors?.['required']) { Please confirm your password }
+            </hlm-field-error>
+          }
+          @if (form.errors?.['mismatch'] && form.controls.confirmPassword.touched) {
+            <hlm-field-error>Passwords don't match</hlm-field-error>
+          }
+        </hlm-field>
+
+        <button hlmBtn type="submit" class="w-full" [disabled]="form.invalid || loading()">
+          @if (loading()) {
+            <hlm-spinner class="mr-2 h-4 w-4" />
+            Creating account…
+          } @else {
+            <ng-icon name="lucideUserPlus" class="mr-2 h-4 w-4" />
+            Create account
+          }
         </button>
       </form>
     </div>
     <div hlmCardFooter class="justify-center">
       <p class="text-muted-foreground text-sm">
         Already have an account?
-        <a routerLink="/auth/login" class="text-primary hover:underline">Login</a>
+        <a routerLink="/auth/login" class="text-primary font-medium hover:underline">Login</a>
       </p>
     </div>
   </div>

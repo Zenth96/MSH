@@ -49,7 +49,7 @@ export class ProjectCreateComponent {
       name: this.name().trim(),
       description: this.description().trim() || undefined,
     }).subscribe({
-      next: (project) => this.router.navigate(['/projects', project.id]),
+      next: (project) => this.router.navigate(['/app/projects', project.id]),
       error: (err) => {
         this.error.set(extractErrorMessage(err, 'Failed to create project'));
         this.saving.set(false);

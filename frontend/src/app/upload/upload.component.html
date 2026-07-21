@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-2xl space-y-8 p-6">
   <div class="flex items-center gap-3">
-    <a [routerLink]="projectId() ? ['/projects', projectId()] : ['/projects']" hlmBtn size="sm" variant="ghost">
+    <a [routerLink]="projectId() ? ['/app/projects', projectId()] : ['/app/projects']" hlmBtn size="sm" variant="ghost">
       <ng-icon name="lucideArrowLeft" class="mr-1 h-4 w-4" />
       Back to Project
     </a>
@@ -8,37 +8,39 @@
   </div>
 
   @if (phase() === 'uploading') {
-    <div class="rounded-xl border bg-card p-8 text-center">
-      <ng-icon name="lucideUpload" class="text-primary mx-auto mb-4 h-12 w-12" />
-      <h2 class="mb-4 text-lg font-semibold">Uploading...</h2>
-      <div class="bg-muted mx-auto mb-2 h-3 w-full max-w-sm overflow-hidden rounded-full">
+    <div class="rounded-xl border bg-card p-8 text-center shadow-sm">
+      <div class="bg-primary/10 mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl">
+        <ng-icon name="lucideUpload" class="text-primary h-7 w-7" />
+      </div>
+      <h2 class="mb-2 text-lg font-semibold">Uploading…</h2>
+      <div class="bg-muted mx-auto mb-2 h-2 w-full max-w-sm overflow-hidden rounded-full">
         <div
           class="bg-primary h-full rounded-full transition-all duration-300"
           [style.width.%]="uploadProgress()"
         ></div>
       </div>
-      <p class="text-muted-foreground mb-4 text-sm">{{ uploadProgress() }}% uploaded</p>
-      <button (click)="cancelUpload()" hlmBtn variant="outline" size="sm">
+      <p class="text-muted-foreground mb-4 text-sm">{{ uploadProgress() }}%</p>
+      <button (click)="cancelUpload()" hlmBtn variant="ghost" size="sm">
         <ng-icon name="lucideX" class="mr-1 h-4 w-4" />
         Cancel
       </button>
     </div>
   } @else if (phase() === 'polling') {
-    <div class="rounded-xl border bg-card p-8 text-center">
-      <hlm-spinner class="mx-auto mb-4" />
-      <h2 class="mb-2 text-lg font-semibold">Processing model...</h2>
-      <p class="text-muted-foreground mb-4 text-sm">{{ processingElapsed() }}s elapsed</p>
-      <button (click)="cancelUpload()" hlmBtn variant="outline" size="sm">
+    <div class="rounded-xl border bg-card p-8 text-center shadow-sm">
+      <hlm-spinner class="mx-auto mb-4 h-8 w-8" />
+      <h2 class="mb-1 text-lg font-semibold">Processing model…</h2>
+      <p class="text-muted-foreground mb-4 text-sm tabular-nums">{{ processingElapsed() }}s elapsed</p>
+      <button (click)="cancelUpload()" hlmBtn variant="ghost" size="sm">
         <ng-icon name="lucideX" class="mr-1 h-4 w-4" />
         Cancel
       </button>
     </div>
   } @else if (phase() === 'success') {
-    <div class="rounded-xl border bg-card p-8 text-center">
-      <div class="bg-emerald-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+    <div class="rounded-xl border bg-card p-8 text-center shadow-sm">
+      <div class="bg-emerald-500/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ring-1 ring-emerald-500/20">
         <ng-icon name="lucideCheck" class="text-emerald-600 h-8 w-8" />
       </div>
-      <h2 class="mb-1 text-lg font-semibold text-emerald-600">Upload Successful!</h2>
+      <h2 class="mb-1 text-lg font-semibold text-emerald-600">Upload successful</h2>
       <p class="text-muted-foreground mb-2 text-sm">{{ uploadedModel()?.name }} is ready.</p>
       <hlm-badge variant="default" class="mb-6">READY</hlm-badge>
       <div class="flex items-center justify-center gap-3">
@@ -52,23 +54,23 @@
       </div>
     </div>
   } @else if (phase() === 'error') {
-    <div class="rounded-xl border bg-card p-8 text-center">
-      <div class="bg-red-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-        <ng-icon name="lucideAlertCircle" class="text-red-600 h-8 w-8" />
+    <div class="rounded-xl border bg-card p-8 text-center shadow-sm">
+      <div class="bg-destructive/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ring-1 ring-destructive/20">
+        <ng-icon name="lucideAlertCircle" class="text-destructive h-8 w-8" />
       </div>
-      <h2 class="mb-1 text-lg font-semibold text-destructive">Upload Failed</h2>
+      <h2 class="mb-1 text-lg font-semibold text-destructive">Upload failed</h2>
       <p class="text-muted-foreground mb-6 text-sm">{{ errorMessage() }}</p>
       <button (click)="clearSelectedFile()" hlmBtn>Try Again</button>
     </div>
   } @else {
     @if (!selectedFile()) {
       <div
-        class="border-border hover:bg-accent/50 flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed p-12 text-center transition-colors"
+        class="border-border hover:border-primary/50 hover:bg-accent/50 flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed p-12 text-center transition-all"
         (dragover)="onDragOver($event)"
         (drop)="onDrop($event)"
         (click)="fileInput.click()"
       >
-        <div class="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-xl">
+        <div class="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-xl ring-1 ring-primary/20">
           <ng-icon name="lucideUpload" class="text-primary h-7 w-7" />
         </div>
         <div>
@@ -152,11 +154,63 @@
           />
         </div>
 
+        <div class="mb-4">
+          <label class="mb-1.5 block text-sm font-medium">Project</label>
+          <div class="relative">
+            <button
+              type="button"
+              (click)="projectDropdownOpen.set(!projectDropdownOpen())"
+              class="border-border focus-visible:ring-ring flex h-10 w-full items-center gap-2 rounded-lg border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            >
+              <ng-icon name="lucideFolderOpen" class="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span class="flex-1 text-left" [class.text-muted-foreground]="!selectedProjectId()">
+                {{ selectedProjectName() || 'Select a project...' }}
+              </span>
+              <ng-icon name="lucideChevronDown" class="h-4 w-4 text-muted-foreground transition-transform" [class.rotate-180]="projectDropdownOpen()" />
+            </button>
+
+            @if (projectDropdownOpen()) {
+              <div class="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border bg-card shadow-lg">
+                <div class="relative border-b border-border">
+                  <ng-icon name="lucideSearch" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <input
+                    [ngModel]="projectSearchQuery()"
+                    (ngModelChange)="projectSearchQuery.set($event)"
+                    placeholder="Search projects..."
+                    class="w-full rounded-t-lg bg-transparent py-2.5 pl-9 pr-3 text-sm outline-none"
+                    (click)="$event.stopPropagation()"
+                  />
+                </div>
+                <div class="max-h-48 overflow-y-auto py-1">
+                  @for (p of filteredProjects(); track p.id) {
+                    <button
+                      type="button"
+                      (click)="selectProject(p.id)"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                      [class.bg-muted]="selectedProjectId() === p.id"
+                      [class.font-medium]="selectedProjectId() === p.id"
+                    >
+                      <ng-icon name="lucideFolderOpen" class="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span class="flex-1 truncate">{{ p.name }}</span>
+                      @if (selectedProjectId() === p.id) {
+                        <ng-icon name="lucideCheck" class="h-4 w-4 text-primary" />
+                      }
+                    </button>
+                  }
+                  @if (filteredProjects().length === 0) {
+                    <p class="px-3 py-4 text-center text-xs text-muted-foreground">No projects found</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
         <button
           (click)="startUpload()"
           hlmBtn
           class="w-full"
-          [disabled]="!modelName.trim() || !!validationError()"
+          [disabled]="!modelName.trim() || !selectedProjectId() || !!validationError()"
         >
           <ng-icon name="lucideUpload" class="mr-2 h-4 w-4" />Upload Model
         </button>

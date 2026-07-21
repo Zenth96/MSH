@@ -10,7 +10,7 @@ import { lucideUpload } from '@ng-icons/lucide';
   viewProviders: [provideIcons({ lucideUpload })],
   template: `
     <a
-      routerLink="/upload"
+      routerLink="/app/upload"
       class="border-border bg-card hover:bg-accent text-foreground flex w-full flex-col items-center gap-3 rounded-xl border p-5 text-center transition-colors cursor-pointer"
     >
       <div class="bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">

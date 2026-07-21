@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold tracking-tight">Projects</h1>
       <p class="text-muted-foreground mt-1">Manage your 3D model projects</p>
     </div>
-    <a routerLink="/projects/new" hlmBtn>
+    <a routerLink="/app/projects/new" hlmBtn>
       <ng-icon name="lucidePlus" class="mr-2 h-4 w-4" />
       New Project
     </a>
@@ -52,7 +52,7 @@
       <h3 class="text-lg font-semibold">No projects found</h3>
       @if (projects().length === 0) {
         <p class="text-muted-foreground mt-1">Create your first project to get started.</p>
-        <a routerLink="/projects/new" hlmBtn class="mt-4">
+        <a routerLink="/app/projects/new" hlmBtn class="mt-4">
           <ng-icon name="lucidePlus" class="mr-2 h-4 w-4" />
           New Project
         </a>
@@ -66,8 +66,8 @@
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       @for (project of filteredProjects(); track project.id) {
         <a
-          [routerLink]="['/projects', project.id]"
-          class="group block rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/50"
+          [routerLink]="['/app/projects', project.id]"
+          class="group relative block rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/50 hover:-translate-y-0.5"
         >
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
@@ -89,11 +89,11 @@
             <div class="flex items-center gap-4">
               <span class="flex items-center gap-1">
                 <ng-icon name="lucideBox" class="h-4 w-4" />
-                {{ project.models?.length ?? 0 }} models
+                {{ project._count?.models ?? 0 }} models
               </span>
             </div>
             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span>View</span>
+              <span class="text-xs font-medium">View</span>
               <ng-icon name="lucideArrowRight" class="h-4 w-4" />
             </div>
           </div>
