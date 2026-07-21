@@ -56,7 +56,9 @@ export class RegisterComponent {
     ).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/app/dashboard']);
+        this.router.navigate(['/auth/verify'], {
+          queryParams: { email: this.form.value.email },
+        });
       },
       error: (err) => {
         this.loading.set(false);

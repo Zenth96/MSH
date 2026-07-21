@@ -8,6 +8,7 @@ export interface User {
   email: string;
   name?: string;
   role: 'ADMIN' | 'EDITOR' | 'VIEWER';
+  emailVerified?: boolean;
   createdAt?: string;
 }
 
@@ -45,10 +46,18 @@ export class AuthService {
     );
   }
 
-  register(name: string, email: string, password: string): Observable<AuthResponse> {
-    return this.api.post<AuthResponse>('/auth/register', { name, email, password }).pipe(
+  register(name: string, email: string, password: string): Observable<{ id: string; email: string; name: string }> {
+    return this.api.post<{ id: string; email: string; name: string }>('/auth/register', { name, email, password });
+  }
+
+  verifyEmail(email: string, code: string): Observable<AuthResponse> {
+    return this.api.post<AuthResponse>('/auth/verify-email', { email, code }).pipe(
       tap(res => this.handleAuthResponse(res)),
     );
+  }
+
+  sendVerifyCode(email: string): Observable<{ message: string }> {
+    return this.api.post<{ message: string }>('/auth/send-verify-code', { email });
   }
 
   refreshToken(): Observable<RefreshResponse> {

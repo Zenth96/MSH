@@ -53,6 +53,12 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading.set(false);
+        if (err.error?.message === 'Email not verified') {
+          this.router.navigate(['/auth/verify'], {
+            queryParams: { email: this.form.value.email },
+          });
+          return;
+        }
         this.error = err.error?.message || 'Login failed';
       },
     });
