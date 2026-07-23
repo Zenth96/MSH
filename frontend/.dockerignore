@@ -1,3 +1,15 @@
 node_modules
 dist
 .git
+.DS_Store
+.env
+.env.*
+*.md
+.angular
+.vscode
+coverage
+.prettierrc
+.editorconfig
+.postcssrc.json
+tsconfig*.json
+components.json

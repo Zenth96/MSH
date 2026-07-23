@@ -42,7 +42,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     platform: linux/amd64
     container_name: msh-minio
     restart: unless-stopped
@@ -64,7 +64,7 @@ services:
       retries: 5
 
   createbuckets:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-03-18T15-59-09Z
     platform: linux/amd64
     container_name: msh-createbuckets
     depends_on:
@@ -174,8 +174,15 @@ services:
       NODE_ENV: production
       PORT: 4000
       API_URL: ${API_URL:-http://localhost:3000}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - msh_network
 

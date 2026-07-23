@@ -1,3 +1,13 @@
 node_modules
 dist
 .git
+.DS_Store
+.env
+.env.*
+*.md
+test
+coverage
+.prettierrc
+eslint.config.mjs
+nest-cli.json
+tsconfig*.json
